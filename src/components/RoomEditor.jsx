@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ELEC, FIXTURES, ECAT, FCAT, uid } from '../constants';
 import { SymIcon } from './ui';
+import ModelImport from './ModelImport';
 
 export default function RoomEditor({ room, onUpdate, onCanvas, flash }) {
   const [tab, setTab] = useState('electrical');
@@ -68,8 +69,9 @@ export default function RoomEditor({ room, onUpdate, onCanvas, flash }) {
 
   return (
     <div className="container">
-      <div className="row" style={{ marginBottom: 16 }}>
+      <div className="row" style={{ marginBottom: 16, gap: 8 }}>
         <button className="btn-outline" onClick={onCanvas}>Floor Plan</button>
+        <ModelImport room={room} onUpdate={onUpdate} flash={flash} />
       </div>
 
       <div className="tabs">

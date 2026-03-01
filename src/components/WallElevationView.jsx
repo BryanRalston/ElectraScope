@@ -16,11 +16,45 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
 
   const W = wallLengthFt * SCALE;
   const H = ceilingHeight * SCALE;
-  const svgW = W + PAD * 2;
+  const LABEL_PAD = 120; // extra right padding for height reference labels
+  const svgW = W + PAD + PAD + LABEL_PAD;
   const svgH = H + PAD * 2;
 
   const placements = room.placements || [];
-  const wallPlacements = placements.filter(p => p.wall === wall);
+
+  // Include items explicitly assigned to this wall, plus items placed from top view
+  // that are closest to this wall (inferred by cx/cy proximity to wall edge)
+  const SNAP_THRESHOLD = 2 * SCALE; // within 2 feet of a wall edge
+  const wallPlacements = placements.filter(p => {
+    // Explicitly placed on this wall
+    if (p.wall === wall) return true;
+    // Skip items without canvas position or already assigned to another wall
+    if (p.cx === undefined || p.cy === undefined) return false;
+    if (p.wall) return false;
+    // Infer wall assignment from proximity to edges
+    const roomW = room.width * SCALE;
+    const roomH = room.height * SCALE;
+    switch (wall) {
+      case 'north': return p.cy <= SNAP_THRESHOLD;
+      case 'south': return p.cy >= roomH - SNAP_THRESHOLD;
+      case 'east':  return p.cx >= roomW - SNAP_THRESHOLD;
+      case 'west':  return p.cx <= SNAP_THRESHOLD;
+      default: return false;
+    }
+  }).map(p => {
+    // If item was placed from top view without wall data, infer wallPos and mountHeight
+    if (p.wall) return p;
+    const roomW = room.width * SCALE;
+    const roomH = room.height * SCALE;
+    let wallPos;
+    switch (wall) {
+      case 'north': case 'south': wallPos = p.cx / SCALE; break;
+      case 'east': case 'west':   wallPos = p.cy / SCALE; break;
+      default: wallPos = 0;
+    }
+    wallPos = clamp(wallPos, 0, wallLengthFt);
+    return { ...p, wallPos: Math.round(wallPos * 10) / 10, mountHeight: p.mountHeight || 48 };
+  });
 
   // --- Coordinate helpers ---
 
@@ -119,7 +153,7 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
         notes: '',
         wall: wall,
         wallPos: Math.round(wallPosFt * 10) / 10,
-        mountHeight: 0,
+        mountHeight: def.defaultMountHeight || 0,
         w: def.w,
         h: def.h,
         color: def.color,
@@ -279,9 +313,9 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
                   x={PAD + W + 6}
                   y={y + 3}
                   fill={ref.color}
-                  fontSize="8"
+                  fontSize="11"
                   fontFamily="Arial, sans-serif"
-                  opacity="0.8"
+                  opacity="0.9"
                 >
                   {ref.label}
                 </text>
@@ -319,8 +353,10 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
           {wallPlacements.filter(p => p.elecKey).map(p => {
             const def = ELEC[p.elecKey];
             if (!def) return null;
-            const px = feetToSvgX(p.wallPos || 0);
-            const py = inchesToSvgY(p.mountHeight || 0);
+            const clampedWallPos = clamp(p.wallPos || 0, 0, wallLengthFt);
+            const clampedMountHeight = clamp(p.mountHeight || 0, 0, ceilingHeightIn);
+            const px = feetToSvgX(clampedWallPos);
+            const py = inchesToSvgY(clampedMountHeight);
             const isSelected = p.id === selectedPlacement;
             return (
               <g
@@ -362,7 +398,7 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
                   textAnchor="middle"
                   y="22"
                   fill="#aaa"
-                  fontSize="8"
+                  fontSize="10"
                   fontFamily="monospace"
                   pointerEvents="none"
                 >
@@ -379,10 +415,11 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
             const fw = (p.w || def.w) * SCALE / 12; // width in SVG pixels
             const fh = (p.h || def.h) * SCALE / 12; // height in SVG pixels
             const fcolor = p.color || def.color || '#888';
-            const px = feetToSvgX(p.wallPos || 0);
-            // Fixture sits on the floor: bottom edge at floor line
-            const floorY = PAD + H;
-            const py = floorY - fh;
+            const clampedWallPos = clamp(p.wallPos || 0, 0, wallLengthFt);
+            const px = feetToSvgX(clampedWallPos);
+            const mountHeight = p.mountHeight || (def && def.defaultMountHeight) || 0;
+            const bottomEdgeY = inchesToSvgY(mountHeight);
+            const py = bottomEdgeY - fh;
             const isSelected = p.id === selectedPlacement;
             return (
               <g
@@ -432,7 +469,7 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
                   textAnchor="middle"
                   dominantBaseline="middle"
                   fill="#888"
-                  fontSize={Math.max(Math.min(fw / (p.name || '').length * 1.1, 8), 5)}
+                  fontSize={Math.max(Math.min(fw / (p.name || '').length * 1.2, 11), 7)}
                   fontWeight="600"
                   fontFamily="sans-serif"
                   pointerEvents="none"

@@ -82,3 +82,37 @@ export async function deletePhoto(key) {
   const db = await getDb();
   return db.delete(STORE, key);
 }
+
+// ─── IndexedDB for 3D models ─────────────────────────────────────
+
+const MODEL_DB_NAME = 'electra-models';
+const MODEL_STORE = 'models';
+let modelDbPromise;
+
+function getModelDb() {
+  if (!modelDbPromise) {
+    modelDbPromise = openDB(MODEL_DB_NAME, 1, {
+      upgrade(db) {
+        if (!db.objectStoreNames.contains(MODEL_STORE)) {
+          db.createObjectStore(MODEL_STORE);
+        }
+      },
+    });
+  }
+  return modelDbPromise;
+}
+
+export async function getModel(key) {
+  const db = await getModelDb();
+  return db.get(MODEL_STORE, key);
+}
+
+export async function saveModel(key, arrayBuffer) {
+  const db = await getModelDb();
+  return db.put(MODEL_STORE, arrayBuffer, key);
+}
+
+export async function deleteModel(key) {
+  const db = await getModelDb();
+  return db.delete(MODEL_STORE, key);
+}

@@ -2,6 +2,7 @@ export function encodeProject(project) {
   const clean = JSON.parse(JSON.stringify(project));
   (clean.rooms || []).forEach(r => {
     delete r.photo;
+    delete r.model;
   });
   const json = JSON.stringify(clean);
   return btoa(unescape(encodeURIComponent(json)));

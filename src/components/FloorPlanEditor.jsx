@@ -1,13 +1,15 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo, Suspense } from 'react';
 import { ELEC, FIXTURES, ECAT, FCAT, WALLS, WALL_LABELS, DEFAULT_CEILING_HEIGHT, uid, clamp } from '../constants';
 import { SymIcon } from './ui';
 import WallElevationView from './WallElevationView';
 import IsometricView from './IsometricView';
 
+const ModelView = React.lazy(() => import('./ModelView'));
+
 const SCALE = 40; // pixels per foot
 const PAD = 40;   // padding around room
 
-const VIEW_TABS = [
+const BASE_VIEW_TABS = [
   { key: 'top', label: 'Top View', icon: '\u{1F5FA}' },
   { key: 'north', label: 'North', icon: '\u2B06' },
   { key: 'south', label: 'South', icon: '\u2B07' },
@@ -19,6 +21,14 @@ const VIEW_TABS = [
 export default function FloorPlanEditor({ room, onUpdate, flash }) {
   const [viewTab, setViewTab] = useState('top');
   const [mode, setMode] = useState('electric');
+
+  const viewTabs = useMemo(() => {
+    const tabs = [...BASE_VIEW_TABS];
+    if (room.model) {
+      tabs.push({ key: 'model', label: '3D Model', icon: '\u{1F3D7}' });
+    }
+    return tabs;
+  }, [room.model]);
   const [eCat, setECat] = useState(ECAT[0]);
   const [fCat, setFCat] = useState(FCAT[0]);
   const [selectedElec, setSelectedElec] = useState(null);
@@ -33,6 +43,7 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
   const [showDims, setShowDims] = useState(false);
   const [dimForm, setDimForm] = useState({ width: room.width, height: room.height, ceilingHeight: room.ceilingHeight || DEFAULT_CEILING_HEIGHT });
   const svgRef = useRef(null);
+  const didDragRef = useRef(false);
 
   const W = room.width * SCALE;
   const H = room.height * SCALE;
@@ -56,6 +67,12 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
   }, [svgW, svgH]);
 
   const handleSvgClick = useCallback((e) => {
+    // Suppress placement if we just finished dragging
+    if (didDragRef.current) {
+      didDragRef.current = false;
+      return;
+    }
+
     const pt = getSvgPoint(e);
     const rx = pt.x - PAD;
     const ry = pt.y - PAD;
@@ -136,6 +153,8 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
   }, [mode, selectedElec, selectedFixture, wireStart, room, placements, wires, W, H, getSvgPoint, onUpdate, flash]);
 
   const handleMouseDown = useCallback((e, placementId) => {
+    // In wire mode, don't start dragging — let click bubble for wire placement
+    if (mode === 'wire') return;
     e.stopPropagation();
     setSelectedPlacement(placementId);
     const pt = getSvgPoint(e);
@@ -146,7 +165,7 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
       offsetX: pt.x - PAD - (p.cx || 0),
       offsetY: pt.y - PAD - (p.cy || 0),
     });
-  }, [placements, getSvgPoint]);
+  }, [placements, getSvgPoint, mode]);
 
   const handleMouseMove = useCallback((e) => {
     if (mode === 'draw' && drawing) {
@@ -156,6 +175,7 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
     }
 
     if (!dragging) return;
+    didDragRef.current = true;
     const pt = getSvgPoint(e);
     const nx = clamp(pt.x - PAD - dragging.offsetX, 0, W);
     const ny = clamp(pt.y - PAD - dragging.offsetY, 0, H);
@@ -173,8 +193,11 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
       setDrawing(false);
       return;
     }
+    if (dragging) {
+      didDragRef.current = true;
+    }
     setDragging(null);
-  }, [mode, drawing, currentPath, drawColor, room, drawings, onUpdate]);
+  }, [mode, drawing, currentPath, drawColor, room, drawings, onUpdate, dragging]);
 
   const handleDrawStart = useCallback((e) => {
     if (mode !== 'draw') return;
@@ -259,11 +282,12 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
     <div className="container">
       {/* View tabs */}
       <div className="view-tabs">
-        {VIEW_TABS.map(vt => (
+        {viewTabs.map(vt => (
           <button
             key={vt.key}
             className={viewTab === vt.key ? 'view-tab view-tab-active' : 'view-tab'}
             onClick={() => setViewTab(vt.key)}
+            title={vt.label}
           >
             <span className="view-tab-icon">{vt.icon}</span>
             <span className="view-tab-label">{vt.label}</span>
@@ -289,7 +313,22 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
         <IsometricView room={room} />
       )}
 
-      {/* Mode toolbar — shown for top and wall views (not 3D) */}
+      {/* 3D Model view (lazy loaded) */}
+      {viewTab === 'model' && room.model && (
+        <Suspense fallback={<div className="meta" style={{ textAlign: 'center', padding: 60 }}>Loading 3D viewer...</div>}>
+          <ModelView
+            room={room}
+            onUpdate={onUpdate}
+            flash={flash}
+            selectedElec={selectedElec}
+            selectedFixture={selectedFixture}
+            mode={mode}
+            onClearSelection={() => { setSelectedElec(null); setSelectedFixture(null); }}
+          />
+        </Suspense>
+      )}
+
+      {/* Mode toolbar — shown for top, wall, and model views (not isometric 3D) */}
       {viewTab !== '3d' && (
         <div className="toolbar">
           {['fixture', 'electric', 'wire', 'draw'].map(m => (
@@ -318,9 +357,10 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
                 key={key}
                 className={selectedElec === key ? 'symbol-btn symbol-btn-selected' : 'symbol-btn'}
                 onClick={() => setSelectedElec(selectedElec === key ? null : key)}
+                title={def.name}
               >
                 <SymIcon sym={key} size={28} />
-                <span className="symbol-label">{def.name}</span>
+                <span className="symbol-label">{def.shortName || def.name}</span>
               </button>
             ))}
           </div>

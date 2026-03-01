@@ -148,9 +148,11 @@ export default function ProjectView({ project, onUpdate, onSelectRoom, onDeleteR
               <div className="room-card-actions">
                 <button
                   className="btn-delete btn-sm"
+                  title="Delete room"
+                  style={{ minWidth: 32, minHeight: 32, fontSize: 16 }}
                   onClick={e => { e.stopPropagation(); onDeleteRoom(r.id); }}
                 >
-                  &times;
+                  &#128465;
                 </button>
                 <span className="chevron">&rsaquo;</span>
               </div>

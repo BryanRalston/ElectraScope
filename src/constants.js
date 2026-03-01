@@ -31,12 +31,12 @@ export const DEFAULT_MOUNT_HEIGHTS = {
 
 // Reference height lines for wall elevation view (inches from floor)
 export const HEIGHT_REFERENCES = [
-  { y: 12, label: '12" Outlet', color: '#C47A15' },
-  { y: 18, label: '18" Counter Outlet', color: '#C47A15' },
-  { y: 44, label: '44" Switch', color: '#2070C8' },
-  { y: 48, label: '48" Counter', color: '#999' },
-  { y: 72, label: '72" Sconce', color: '#1A8A50' },
-  { y: 84, label: '84" Header', color: '#999' },
+  { y: 12, label: '12" Outlet', color: '#888' },
+  { y: 18, label: '18" Counter Outlet', color: '#888' },
+  { y: 44, label: '44" Switch', color: '#888' },
+  { y: 48, label: '48" Counter', color: '#888' },
+  { y: 72, label: '72" Sconce', color: '#888' },
+  { y: 84, label: '84" Header', color: '#888' },
 ];
 
 // ─── Electrical symbol categories ──────────────────────────────────
@@ -84,6 +84,7 @@ export const ELEC = {
   },
   dedicated: {
     name: 'Dedicated Outlet',
+    shortName: 'Dedicated',
     abbr: 'DED',
     cat: 'Outlets',
     color: '#C47A15',
@@ -91,6 +92,7 @@ export const ELEC = {
   },
   range: {
     name: '240V Range Outlet',
+    shortName: '240V Range',
     abbr: '240R',
     cat: 'Outlets',
     color: '#C47A15',
@@ -98,6 +100,7 @@ export const ELEC = {
   },
   dryer: {
     name: '240V Dryer Outlet',
+    shortName: '240V Dryer',
     abbr: '240D',
     cat: 'Outlets',
     color: '#C47A15',
@@ -120,6 +123,7 @@ export const ELEC = {
   // ── Switches ──
   singlePole: {
     name: 'Single Pole Switch',
+    shortName: 'Single Pole',
     abbr: 'S',
     cat: 'Switches',
     color: '#2070C8',
@@ -148,6 +152,7 @@ export const ELEC = {
   },
   fan_switch: {
     name: 'Fan Speed Switch',
+    shortName: 'Fan Speed',
     abbr: 'SF',
     cat: 'Switches',
     color: '#2070C8',
@@ -170,6 +175,7 @@ export const ELEC = {
   },
   surface: {
     name: 'Surface Mount Light',
+    shortName: 'Surface Mount',
     abbr: 'SF',
     cat: 'Lights',
     color: '#1A8A50',
@@ -184,6 +190,7 @@ export const ELEC = {
   },
   fanLight: {
     name: 'Ceiling Fan + Light',
+    shortName: 'Fan + Light',
     abbr: 'F',
     cat: 'Lights',
     color: '#1A8A50',
@@ -198,6 +205,7 @@ export const ELEC = {
   },
   undercab: {
     name: 'Under Cabinet Light',
+    shortName: 'Under Cabinet',
     abbr: 'UC',
     cat: 'Lights',
     color: '#1A8A50',
@@ -228,6 +236,7 @@ export const ELEC = {
   // ── Panel ──
   panel: {
     name: 'Electrical Panel',
+    shortName: 'Elec Panel',
     abbr: 'PNL',
     cat: 'Panel',
     color: '#666',
@@ -243,11 +252,11 @@ export const FIXTURES = {
   range:         { name: 'Range/Stove',     w: 30, h: 25, cat: 'Kitchen',   color: '#C08080', icon: '\u{1F525}' },
   dishwasher:    { name: 'Dishwasher',      w: 24, h: 24, cat: 'Kitchen',   color: '#7898B0', icon: '\u{1F4A7}' },
   sink_k:        { name: 'Kitchen Sink',    w: 33, h: 22, cat: 'Kitchen',   color: '#68A0B0', icon: '\u{1F6B0}' },
-  microwave:     { name: 'Microwave',       w: 30, h: 16, cat: 'Kitchen',   color: '#909090', icon: '\u{1F4E1}' },
+  microwave:     { name: 'Microwave',       w: 30, h: 16, cat: 'Kitchen',   color: '#909090', icon: '\u{1F4E1}', defaultMountHeight: 54 },
   island:        { name: 'Island',          w: 60, h: 36, cat: 'Kitchen',   color: '#A08868', icon: '\u{1F3DD}' },
-  hood:          { name: 'Range Hood',      w: 30, h: 18, cat: 'Kitchen',   color: '#888',    icon: '\u{1F32C}' },
+  hood:          { name: 'Range Hood',      w: 30, h: 18, cat: 'Kitchen',   color: '#888',    icon: '\u{1F32C}', defaultMountHeight: 66 },
   // Cabinets
-  upper_cab:     { name: 'Upper Cabinet',   w: 36, h: 12, cat: 'Cabinets',  color: '#B09878', icon: '\u{1F5C4}' },
+  upper_cab:     { name: 'Upper Cabinet',   w: 36, h: 12, cat: 'Cabinets',  color: '#B09878', icon: '\u{1F5C4}', defaultMountHeight: 54 },
   lower_cab:     { name: 'Lower Cabinet',   w: 36, h: 24, cat: 'Cabinets',  color: '#A08868', icon: '\u{1F5C4}' },
   cab_corner:    { name: 'Corner Cabinet',  w: 36, h: 36, cat: 'Cabinets',  color: '#A08060', icon: '\u{1F4D0}' },
   pantry_cab:    { name: 'Pantry',          w: 24, h: 24, cat: 'Cabinets',  color: '#987858', icon: '\u{1F5C4}' },

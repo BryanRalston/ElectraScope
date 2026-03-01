@@ -1,6 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { ELEC, FIXTURES, WALL_LABELS } from '../constants';
 
+// ─── Fixture physical heights (inches) ─────────────────────────────
+const FIXTURE_HEIGHTS = {
+  refrigerator: 70, range: 36, dishwasher: 34, sink_k: 8, microwave: 12, island: 36, hood: 8,
+  upper_cab: 30, lower_cab: 34, cab_corner: 34, pantry_cab: 84,
+  toilet: 28, bathtub: 20, shower: 80, vanity: 34, sink_b: 8,
+  washer: 38, dryer: 38, water_heater: 60,
+  door_36: 80, door_30: 80, window_36: 48, window_48: 48, window_60: 48, closet: 84, stairs: 10,
+  bed_king: 24, bed_queen: 24, desk: 30, sofa: 30, tv_stand: 24, dining_table: 30,
+};
+const DEFAULT_FIXTURE_HEIGHT = 36;
+
 // ─── Isometric projection constants ────────────────────────────────
 const ANGLE = Math.PI / 6; // 30 degrees
 const COS = Math.cos(ANGLE); // ~0.866
@@ -252,7 +263,7 @@ export default function IsometricView({ room }) {
             y="18"
             textAnchor="middle"
             fill="#ccc"
-            fontSize="6"
+            fontSize="11"
             fontFamily="Arial, sans-serif"
           >
             {p.name || def.name}
@@ -261,33 +272,91 @@ export default function IsometricView({ room }) {
       );
     }
 
-    // Fixture: render as a small isometric rectangle on the floor
+    // Fixture: render as a 3D isometric box
     if (p.fixtureKey && def) {
       const fw = (p.w || def.w) / 12; // inches to feet
       const fh = (p.h || def.h) / 12;
-      // Draw a small parallelogram for the fixture footprint
+      const fixtureH = (FIXTURE_HEIGHTS[p.fixtureKey] || DEFAULT_FIXTURE_HEIGHT) / 12; // inches to feet
       const halfW = fw / 2;
       const halfH = fh / 2;
       const rx = (p.cx || 0) / PLAN_SCALE;
       const ry = (p.cy || 0) / PLAN_SCALE;
-      const c0 = p3d(rx - halfW, ry - halfH, 0);
-      const c1 = p3d(rx + halfW, ry - halfH, 0);
-      const c2 = p3d(rx + halfW, ry + halfH, 0);
-      const c3 = p3d(rx - halfW, ry + halfH, 0);
-      const fixPts = [c0, c1, c2, c3];
+      const rot = (p.rotation || 0) * Math.PI / 180;
+      const cosR = Math.cos(rot);
+      const sinR = Math.sin(rot);
+      const rotX = (dx, dy) => dx * cosR - dy * sinR;
+      const rotY = (dx, dy) => dx * sinR + dy * cosR;
+
+      // Bottom face corners (z=0), rotated around center
+      const b0 = p3d(rx + rotX(-halfW, -halfH), ry + rotY(-halfW, -halfH), 0);
+      const b1 = p3d(rx + rotX( halfW, -halfH), ry + rotY( halfW, -halfH), 0);
+      const b2 = p3d(rx + rotX( halfW,  halfH), ry + rotY( halfW,  halfH), 0);
+      const b3 = p3d(rx + rotX(-halfW,  halfH), ry + rotY(-halfW,  halfH), 0);
+
+      // Top face corners (z=fixtureH), rotated around center
+      const t0 = p3d(rx + rotX(-halfW, -halfH), ry + rotY(-halfW, -halfH), fixtureH);
+      const t1 = p3d(rx + rotX( halfW, -halfH), ry + rotY( halfW, -halfH), fixtureH);
+      const t2 = p3d(rx + rotX( halfW,  halfH), ry + rotY( halfW,  halfH), fixtureH);
+      const t3 = p3d(rx + rotX(-halfW,  halfH), ry + rotY(-halfW,  halfH), fixtureH);
+
+      // Top face center for icon placement
+      const topCenter = p3d(rx, ry, fixtureH);
+      // Below box center for label
+      const labelPos = p3d(rx, ry, 0);
+
+      const strokeColor = color;
 
       return (
         <g key={p.id}>
+          {/* Back side face (b0-b1-t1-t0) */}
           <polygon
-            points={polyPoints(fixPts)}
+            points={polyPoints([b0, b1, t1, t0])}
             fill={color}
-            fillOpacity="0.35"
-            stroke={color}
+            fillOpacity="0.2"
+            stroke={strokeColor}
+            strokeOpacity="0.8"
             strokeWidth="1"
           />
+          {/* Left side face (b3-b0-t0-t3) */}
+          <polygon
+            points={polyPoints([b3, b0, t0, t3])}
+            fill={color}
+            fillOpacity="0.25"
+            stroke={strokeColor}
+            strokeOpacity="0.8"
+            strokeWidth="1"
+          />
+          {/* Right side face (b1-b2-t2-t1) */}
+          <polygon
+            points={polyPoints([b1, b2, t2, t1])}
+            fill={color}
+            fillOpacity="0.35"
+            stroke={strokeColor}
+            strokeOpacity="0.8"
+            strokeWidth="1"
+          />
+          {/* Front side face (b2-b3-t3-t2) */}
+          <polygon
+            points={polyPoints([b2, b3, t3, t2])}
+            fill={color}
+            fillOpacity="0.3"
+            stroke={strokeColor}
+            strokeOpacity="0.8"
+            strokeWidth="1"
+          />
+          {/* Top face */}
+          <polygon
+            points={polyPoints([t0, t1, t2, t3])}
+            fill={color}
+            fillOpacity="0.5"
+            stroke={strokeColor}
+            strokeOpacity="0.8"
+            strokeWidth="1"
+          />
+          {/* Icon on top face */}
           <text
-            x={pos.sx}
-            y={pos.sy + 2}
+            x={topCenter.sx}
+            y={topCenter.sy + 2}
             textAnchor="middle"
             dominantBaseline="middle"
             fill="#fff"
@@ -297,12 +366,13 @@ export default function IsometricView({ room }) {
           >
             {def.icon || label.slice(0, 3)}
           </text>
+          {/* Name label below box */}
           <text
-            x={pos.sx}
-            y={pos.sy + 15}
+            x={labelPos.sx}
+            y={labelPos.sy + 10}
             textAnchor="middle"
             fill="#aaa"
-            fontSize="5"
+            fontSize="11"
             fontFamily="Arial, sans-serif"
           >
             {def.name}
@@ -319,7 +389,7 @@ export default function IsometricView({ room }) {
           y="18"
           textAnchor="middle"
           fill="#aaa"
-          fontSize="5"
+          fontSize="11"
           fontFamily="Arial, sans-serif"
         >
           {label}
@@ -419,8 +489,8 @@ export default function IsometricView({ room }) {
                 y={labelPt.sy}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fill="rgba(200, 200, 200, 0.35)"
-                fontSize="10"
+                fill="rgba(255, 255, 255, 0.6)"
+                fontSize="12"
                 fontWeight="600"
                 fontFamily="Inter, sans-serif"
                 letterSpacing="1"
@@ -474,7 +544,7 @@ export default function IsometricView({ room }) {
                   y={midW.sy + 14}
                   textAnchor="middle"
                   fill="#C47A15"
-                  fontSize="8"
+                  fontSize="12"
                   fontFamily="Inter, sans-serif"
                   fontWeight="600"
                 >
@@ -485,7 +555,7 @@ export default function IsometricView({ room }) {
                   y={midD.sy}
                   textAnchor="middle"
                   fill="#C47A15"
-                  fontSize="8"
+                  fontSize="12"
                   fontFamily="Inter, sans-serif"
                   fontWeight="600"
                 >
