@@ -90,7 +90,7 @@ export default function ScopeView({ project, onPrint }) {
               <h3 className="card-title">{r.name}</h3>
               <div className="scope-room-tags">
                 <span className="scope-tag">{r.type}</span>
-                <span className="scope-tag">{r.width}&apos; &times; {r.height}&apos;</span>
+                <span className="scope-tag">{r.width}&apos; &times; {r.height}&apos; &times; {r.ceilingHeight || 9}&apos; ceil</span>
               </div>
             </div>
             <table className="scope-table">
@@ -98,6 +98,7 @@ export default function ScopeView({ project, onPrint }) {
                 <tr>
                   <th>Item</th>
                   <th>Qty</th>
+                  <th>Wall</th>
                   <th>Location</th>
                   <th>Height</th>
                   <th>Circuit</th>
@@ -114,8 +115,9 @@ export default function ScopeView({ project, onPrint }) {
                       </div>
                     </td>
                     <td>{p.qty || 1}</td>
-                    <td>{p.location || '-'}</td>
-                    <td>{p.height || '-'}</td>
+                    <td>{p.wall ? p.wall.charAt(0).toUpperCase() + p.wall.slice(1) : '-'}</td>
+                    <td>{p.location || (p.wallPos ? p.wallPos.toFixed(1) + "' from left" : '-')}</td>
+                    <td>{p.mountHeight ? p.mountHeight + '"' : p.height || '-'}</td>
                     <td>{p.circuit || '-'}</td>
                     <td className="meta">{[p.spec, p.notes].filter(Boolean).join('; ') || '-'}</td>
                   </tr>

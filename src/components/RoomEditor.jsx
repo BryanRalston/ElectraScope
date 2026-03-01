@@ -35,11 +35,11 @@ export default function RoomEditor({ room, onUpdate, onCanvas, flash }) {
       id: uid(),
       fixtureKey: key,
       name: def.name,
-      qty: def.defaultQty,
+      qty: 1,
       location: '',
       height: '',
       circuit: '',
-      spec: `${def.watts}W, ${def.finish}${def.trim ? ', ' + def.trim : ''}`,
+      spec: `${def.w}" x ${def.h}"`,
       notes: '',
     };
     onUpdate({ ...room, placements: [...placements, p] });
@@ -127,8 +127,9 @@ export default function RoomEditor({ room, onUpdate, onCanvas, flash }) {
           <div className="fixture-grid">
             {fixKeys.map(([key, def]) => (
               <button key={key} className="fixture-btn" onClick={() => addFixture(key)}>
+                <span style={{ fontSize: 20 }}>{def.icon}</span>
                 <div className="fixture-btn-name">{def.name}</div>
-                <div className="meta">{def.watts}W &middot; Qty {def.defaultQty}</div>
+                <div className="meta">{def.w}" x {def.h}"</div>
               </button>
             ))}
           </div>

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { uid, RTYPES } from '../constants';
+import { uid, RTYPES, DEFAULT_CEILING_HEIGHT } from '../constants';
 import { makeShareUrl } from '../share';
 import { EmptyState } from './ui';
 
 export default function ProjectView({ project, onUpdate, onSelectRoom, onDeleteRoom, onScope, onPrint, flash }) {
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ type: 'Living Room', customName: '', width: 12, height: 10 });
+  const [form, setForm] = useState({ type: 'Living Room', customName: '', width: 12, height: 10, ceilingHeight: DEFAULT_CEILING_HEIGHT });
   const [shareCode, setShareCode] = useState('');
 
   const handleAddRoom = (e) => {
@@ -17,6 +17,7 @@ export default function ProjectView({ project, onUpdate, onSelectRoom, onDeleteR
       type: form.type,
       width: Math.max(4, Math.min(100, Number(form.width) || 12)),
       height: Math.max(4, Math.min(100, Number(form.height) || 10)),
+      ceilingHeight: Math.max(7, Math.min(20, Number(form.ceilingHeight) || DEFAULT_CEILING_HEIGHT)),
       placements: [],
       wires: [],
       drawings: [],
@@ -26,7 +27,7 @@ export default function ProjectView({ project, onUpdate, onSelectRoom, onDeleteR
     const updated = { ...project, rooms: [...(project.rooms || []), r] };
     onUpdate(updated);
     setShowForm(false);
-    setForm({ type: 'Living Room', customName: '', width: 12, height: 10 });
+    setForm({ type: 'Living Room', customName: '', width: 12, height: 10, ceilingHeight: DEFAULT_CEILING_HEIGHT });
     flash('Room added');
   };
 
@@ -98,7 +99,7 @@ export default function ProjectView({ project, onUpdate, onSelectRoom, onDeleteR
               />
             </div>
             <div>
-              <label className="dim-label">Height (ft)</label>
+              <label className="dim-label">Depth (ft)</label>
               <input
                 className="dim-input"
                 type="number"
@@ -106,6 +107,17 @@ export default function ProjectView({ project, onUpdate, onSelectRoom, onDeleteR
                 max="100"
                 value={form.height}
                 onChange={e => setForm({ ...form, height: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="dim-label">Ceiling (ft)</label>
+              <input
+                className="dim-input"
+                type="number"
+                min="7"
+                max="20"
+                value={form.ceilingHeight}
+                onChange={e => setForm({ ...form, ceilingHeight: e.target.value })}
               />
             </div>
           </div>
@@ -128,7 +140,7 @@ export default function ProjectView({ project, onUpdate, onSelectRoom, onDeleteR
             <div className="room-card-body">
               <div>
                 <div className="room-name">{r.name}</div>
-                <div className="room-type">{r.type} &middot; {r.width}' &times; {r.height}'</div>
+                <div className="room-type">{r.type} &middot; {r.width}' &times; {r.height}' &times; {r.ceilingHeight || 9}' ceil</div>
                 <div className="meta">
                   {elecCount(r)} electrical &middot; {fixtureCount(r)} fixtures
                 </div>

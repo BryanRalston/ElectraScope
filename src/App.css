@@ -113,16 +113,19 @@ body {
 .back-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  background: none;
-  border: none;
-  color: var(--amber);
+  background: var(--amber-light);
+  border: 1.5px solid var(--amber);
+  color: var(--amber-dark);
   font-family: var(--font);
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  padding: 6px 8px;
-  border-radius: var(--radius-xs);
   transition: background 0.15s;
 }
 
@@ -1409,6 +1412,106 @@ body {
   font-size: 11px;
   color: #aaa;
   margin-top: 4px;
+}
+
+/* ─── View tabs (Top / Wall / 3D) ──────────────────────────────── */
+
+.view-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 8px;
+}
+
+.view-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: var(--touch-min);
+  transition: all 0.15s;
+}
+
+.view-tab:hover {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.view-tab-active {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: #fff;
+}
+
+.view-tab-icon {
+  font-size: 14px;
+}
+
+.view-tab-label {
+  font-size: 12px;
+}
+
+/* ─── Wall elevation specific ──────────────────────────────────── */
+
+.wall-info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--amber-light);
+  border: 1px solid var(--amber);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--amber-dark);
+  font-weight: 600;
+}
+
+.height-ref-legend {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 0;
+  font-size: 11px;
+}
+
+.height-ref-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.height-ref-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ─── Isometric 3D view ────────────────────────────────────────── */
+
+.iso-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.iso-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 /* ─── Print utilities ───────────────────────────────────────────── */

@@ -1,12 +1,24 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { ELEC, FIXTURES, ECAT, FCAT, uid, clamp } from '../constants';
+import { ELEC, FIXTURES, ECAT, FCAT, WALLS, WALL_LABELS, DEFAULT_CEILING_HEIGHT, uid, clamp } from '../constants';
 import { SymIcon } from './ui';
+import WallElevationView from './WallElevationView';
+import IsometricView from './IsometricView';
 
 const SCALE = 40; // pixels per foot
 const PAD = 40;   // padding around room
 
+const VIEW_TABS = [
+  { key: 'top', label: 'Top View', icon: '\u{1F5FA}' },
+  { key: 'north', label: 'North', icon: '\u2B06' },
+  { key: 'south', label: 'South', icon: '\u2B07' },
+  { key: 'east', label: 'East', icon: '\u27A1' },
+  { key: 'west', label: 'West', icon: '\u2B05' },
+  { key: '3d', label: '3D', icon: '\u{1F4CB}' },
+];
+
 export default function FloorPlanEditor({ room, onUpdate, flash }) {
-  const [mode, setMode] = useState('fixture');
+  const [viewTab, setViewTab] = useState('top');
+  const [mode, setMode] = useState('electric');
   const [eCat, setECat] = useState(ECAT[0]);
   const [fCat, setFCat] = useState(FCAT[0]);
   const [selectedElec, setSelectedElec] = useState(null);
@@ -19,7 +31,7 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
   const [currentPath, setCurrentPath] = useState([]);
   const [photoOpacity, setPhotoOpacity] = useState(0.3);
   const [showDims, setShowDims] = useState(false);
-  const [dimForm, setDimForm] = useState({ width: room.width, height: room.height });
+  const [dimForm, setDimForm] = useState({ width: room.width, height: room.height, ceilingHeight: room.ceilingHeight || DEFAULT_CEILING_HEIGHT });
   const svgRef = useRef(null);
 
   const W = room.width * SCALE;
@@ -79,16 +91,18 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
         id: uid(),
         fixtureKey: selectedFixture,
         name: def.name,
-        qty: def.defaultQty,
+        qty: 1,
         location: '',
         height: '',
         circuit: '',
-        spec: `${def.watts}W, ${def.finish}${def.trim ? ', ' + def.trim : ''}`,
+        spec: `${def.w}" x ${def.h}"`,
         notes: '',
         cx: rx,
         cy: ry,
-        w: 30,
-        h: 30,
+        w: def.w,
+        h: def.h,
+        color: def.color,
+        icon: def.icon,
         rotation: 0,
       };
       onUpdate({ ...room, placements: [...placements, p] });
@@ -181,8 +195,9 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
     if (!selectedPlacement) return;
     const updated = placements.map(p => {
       if (p.id !== selectedPlacement || !p.fixtureKey) return p;
-      const s = clamp((p.w || 30) + delta, 16, 80);
-      return { ...p, w: s, h: s };
+      const ratio = p.h / p.w;
+      const nw = clamp((p.w || 30) + delta, 6, 120);
+      return { ...p, w: nw, h: Math.round(nw * ratio) };
     });
     onUpdate({ ...room, placements: updated });
   };
@@ -224,7 +239,8 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
   const saveDims = () => {
     const w = clamp(Number(dimForm.width) || room.width, 4, 100);
     const h = clamp(Number(dimForm.height) || room.height, 4, 100);
-    onUpdate({ ...room, width: w, height: h });
+    const ch = clamp(Number(dimForm.ceilingHeight) || room.ceilingHeight || 9, 7, 20);
+    onUpdate({ ...room, width: w, height: h, ceilingHeight: ch });
     setShowDims(false);
     flash('Dimensions updated');
   };
@@ -241,20 +257,54 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
 
   return (
     <div className="container">
-      {/* Mode toolbar */}
-      <div className="toolbar">
-        {['fixture', 'electric', 'wire', 'draw'].map(m => (
+      {/* View tabs */}
+      <div className="view-tabs">
+        {VIEW_TABS.map(vt => (
           <button
-            key={m}
-            className={mode === m ? 'tool-btn tool-active' : 'tool-btn'}
-            onClick={() => { setMode(m); setWireStart(null); setDrawing(false); setCurrentPath([]); }}
+            key={vt.key}
+            className={viewTab === vt.key ? 'view-tab view-tab-active' : 'view-tab'}
+            onClick={() => setViewTab(vt.key)}
           >
-            {m.charAt(0).toUpperCase() + m.slice(1)}
+            <span className="view-tab-icon">{vt.icon}</span>
+            <span className="view-tab-label">{vt.label}</span>
           </button>
         ))}
       </div>
 
-      {/* Symbol/fixture picker */}
+      {/* Wall elevation views */}
+      {WALLS.includes(viewTab) && (
+        <WallElevationView
+          room={room}
+          wall={viewTab}
+          onUpdate={onUpdate}
+          flash={flash}
+          selectedElec={selectedElec}
+          selectedFixture={selectedFixture}
+          mode={mode}
+        />
+      )}
+
+      {/* 3D isometric view */}
+      {viewTab === '3d' && (
+        <IsometricView room={room} />
+      )}
+
+      {/* Mode toolbar — shown for top and wall views (not 3D) */}
+      {viewTab !== '3d' && (
+        <div className="toolbar">
+          {['fixture', 'electric', 'wire', 'draw'].map(m => (
+            <button
+              key={m}
+              className={mode === m ? 'tool-btn tool-active' : 'tool-btn'}
+              onClick={() => { setMode(m); setWireStart(null); setDrawing(false); setCurrentPath([]); }}
+            >
+              {m.charAt(0).toUpperCase() + m.slice(1)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Symbol/fixture picker — shown for top and wall views */}
       {mode === 'electric' && (
         <>
           <div className="tabs" style={{ marginTop: 8 }}>
@@ -291,8 +341,9 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
                 className={selectedFixture === key ? 'fixture-btn fixture-btn-selected' : 'fixture-btn'}
                 onClick={() => setSelectedFixture(selectedFixture === key ? null : key)}
               >
+                <span style={{ fontSize: 20 }}>{def.icon}</span>
                 <div className="fixture-btn-name">{def.name}</div>
-                <div className="meta">{def.watts}W</div>
+                <div className="meta">{def.w}" x {def.h}"</div>
               </button>
             ))}
           </div>
@@ -312,6 +363,9 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
           Click second point to complete wire. Wire auto-straightens to horizontal, vertical, or L-shape.
         </div>
       )}
+
+      {/* ═══ TOP VIEW CONTENT ═══ */}
+      {viewTab === 'top' && <>
 
       {/* Selected placement controls */}
       {selectedP && (
@@ -351,19 +405,22 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
             <button className="btn-sm btn-delete" onClick={removePhoto}>Remove</button>
           </>
         )}
-        <button className="btn-sm btn-outline" onClick={() => { setShowDims(!showDims); setDimForm({ width: room.width, height: room.height }); }}>
+        <button className="btn-sm btn-outline" onClick={() => { setShowDims(!showDims); setDimForm({ width: room.width, height: room.height, ceilingHeight: room.ceilingHeight || 9 }); }}>
           Dimensions
         </button>
       </div>
 
       {showDims && (
         <div className="card" style={{ marginTop: 8, padding: 8 }}>
-          <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+          <div className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <label className="dim-label">W</label>
             <input className="dim-input" type="number" min="4" max="100" value={dimForm.width} onChange={e => setDimForm({ ...dimForm, width: e.target.value })} />
             <span className="dim-unit">ft</span>
-            <label className="dim-label">H</label>
+            <label className="dim-label">D</label>
             <input className="dim-input" type="number" min="4" max="100" value={dimForm.height} onChange={e => setDimForm({ ...dimForm, height: e.target.value })} />
+            <span className="dim-unit">ft</span>
+            <label className="dim-label">Ceil</label>
+            <input className="dim-input" type="number" min="7" max="20" value={dimForm.ceilingHeight} onChange={e => setDimForm({ ...dimForm, ceilingHeight: e.target.value })} />
             <span className="dim-unit">ft</span>
             <button className="btn-sm btn-primary" onClick={saveDims}>Apply</button>
           </div>
@@ -487,7 +544,9 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
               );
             }
             if (p.fixtureKey) {
-              const size = p.w || 30;
+              const fw = (p.w || 30) * SCALE / 12;
+              const fh = (p.h || 30) * SCALE / 12;
+              const fcolor = p.color || '#888';
               return (
                 <g
                   key={p.id}
@@ -496,17 +555,19 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
                   style={{ cursor: 'move' }}
                 >
                   <rect
-                    x={-size / 2}
-                    y={-size / 2}
-                    width={size}
-                    height={size}
+                    x={-fw / 2}
+                    y={-fh / 2}
+                    width={fw}
+                    height={fh}
                     rx="3"
-                    fill={isSelected ? 'rgba(34,211,238,0.15)' : 'rgba(26,138,80,0.15)'}
-                    stroke={isSelected ? '#22d3ee' : '#1A8A50'}
-                    strokeWidth={isSelected ? 2 : 1}
-                    strokeDasharray={isSelected ? '' : '4,2'}
+                    fill={fcolor + '40'}
+                    stroke={isSelected ? '#C47A15' : fcolor}
+                    strokeWidth={isSelected ? 2.5 : 1.5}
+                    strokeDasharray={isSelected ? '6 3' : 'none'}
                   />
-                  <text textAnchor="middle" dominantBaseline="middle" fill="#1A8A50" fontSize="8" fontFamily="Arial">{p.name.length > 10 ? p.name.slice(0, 8) + '..' : p.name}</text>
+                  <text textAnchor="middle" y={-2} dominantBaseline="middle" fontSize={Math.min(fw * 0.45, 15)} pointerEvents="none">{p.icon || '\u25AA'}</text>
+                  <text textAnchor="middle" y={fh > 20 ? 11 : 8} dominantBaseline="middle" fill="#666" fontSize={Math.max(Math.min(fw / (p.name || '').length * 1.1, 9), 5)} fontWeight="600" fontFamily="sans-serif" pointerEvents="none">{p.name}</text>
+                  {isSelected && <text textAnchor="middle" y={fh / 2 + 11} fill="#999" fontSize="7" fontFamily="monospace">{p.w}" x {p.h}"</text>}
                 </g>
               );
             }
@@ -535,6 +596,9 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
           </div>
         </div>
       ))}
+
+      </>}
+      {/* ═══ END TOP VIEW CONTENT ═══ */}
     </div>
   );
 }

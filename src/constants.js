@@ -15,11 +15,35 @@ export function inToFt(inches) {
   return rem === 0 ? `${ft}'` : `${ft}' ${rem}"`;
 }
 
+// ─── Room defaults ──────────────────────────────────────────────
+export const DEFAULT_CEILING_HEIGHT = 9; // feet
+export const WALLS = ['north', 'south', 'east', 'west'];
+export const WALL_LABELS = { north: 'North Wall', south: 'South Wall', east: 'East Wall', west: 'West Wall' };
+
+// Default mount heights in inches by symbol category
+export const DEFAULT_MOUNT_HEIGHTS = {
+  Outlets: 12,    // standard low outlet
+  Switches: 44,   // standard switch height
+  Lights: 96,     // ceiling mount (will be at ceiling height)
+  Safety: 96,     // ceiling mount
+  Panel: 60,      // panel center
+};
+
+// Reference height lines for wall elevation view (inches from floor)
+export const HEIGHT_REFERENCES = [
+  { y: 12, label: '12" Outlet', color: '#C47A15' },
+  { y: 18, label: '18" Counter Outlet', color: '#C47A15' },
+  { y: 44, label: '44" Switch', color: '#2070C8' },
+  { y: 48, label: '48" Counter', color: '#999' },
+  { y: 72, label: '72" Sconce', color: '#1A8A50' },
+  { y: 84, label: '84" Header', color: '#999' },
+];
+
 // ─── Electrical symbol categories ──────────────────────────────────
 export const ECAT = ['Outlets', 'Switches', 'Lights', 'Safety', 'Panel'];
 
 // ─── Fixture categories ───────────────────────────────────────────
-export const FCAT = ['Can Light', 'Pendant', 'Chandelier', 'Sconce', 'Bath Bar', 'Flush Mount', 'Fan', 'Under Cabinet', 'Landscape', 'Track', 'Other'];
+export const FCAT = ['Kitchen', 'Cabinets', 'Bathroom', 'Laundry', 'Structure', 'Furniture'];
 
 // ─── Room types ───────────────────────────────────────────────────
 export const RTYPES = [
@@ -211,36 +235,45 @@ export const ELEC = {
   }
 };
 
-// ─── Fixture presets ──────────────────────────────────────────────
+// ─── Fixture / appliance presets (physical objects for floor plan) ─
+// w/h are in inches for floor plan rendering
 export const FIXTURES = {
-  can4: { name: '4" Can Light', cat: 'Can Light', watts: 10, defaultQty: 4, finish: 'White', trim: 'Baffle' },
-  can6: { name: '6" Can Light', cat: 'Can Light', watts: 14, defaultQty: 4, finish: 'White', trim: 'Baffle' },
-  can4_gimbal: { name: '4" Gimbal Can', cat: 'Can Light', watts: 10, defaultQty: 2, finish: 'White', trim: 'Gimbal' },
-  can6_gimbal: { name: '6" Gimbal Can', cat: 'Can Light', watts: 14, defaultQty: 2, finish: 'White', trim: 'Gimbal' },
-  pendant_single: { name: 'Single Pendant', cat: 'Pendant', watts: 12, defaultQty: 1, finish: 'Brushed Nickel', trim: '' },
-  pendant_cluster: { name: 'Pendant Cluster (3)', cat: 'Pendant', watts: 36, defaultQty: 1, finish: 'Black', trim: '' },
-  pendant_linear: { name: 'Linear Pendant', cat: 'Pendant', watts: 40, defaultQty: 1, finish: 'Black', trim: '' },
-  chandelier_small: { name: 'Small Chandelier', cat: 'Chandelier', watts: 40, defaultQty: 1, finish: 'Brushed Nickel', trim: '' },
-  chandelier_large: { name: 'Large Chandelier', cat: 'Chandelier', watts: 80, defaultQty: 1, finish: 'Bronze', trim: '' },
-  sconce_single: { name: 'Wall Sconce', cat: 'Sconce', watts: 8, defaultQty: 2, finish: 'Brushed Nickel', trim: '' },
-  sconce_double: { name: 'Double Sconce', cat: 'Sconce', watts: 16, defaultQty: 2, finish: 'Brushed Nickel', trim: '' },
-  bath_2: { name: '2-Light Bath Bar', cat: 'Bath Bar', watts: 16, defaultQty: 1, finish: 'Chrome', trim: '' },
-  bath_3: { name: '3-Light Bath Bar', cat: 'Bath Bar', watts: 24, defaultQty: 1, finish: 'Chrome', trim: '' },
-  bath_4: { name: '4-Light Bath Bar', cat: 'Bath Bar', watts: 32, defaultQty: 1, finish: 'Chrome', trim: '' },
-  flush_small: { name: 'Small Flush Mount', cat: 'Flush Mount', watts: 15, defaultQty: 1, finish: 'White', trim: '' },
-  flush_large: { name: 'Large Flush Mount', cat: 'Flush Mount', watts: 30, defaultQty: 1, finish: 'Brushed Nickel', trim: '' },
-  fan_42: { name: '42" Ceiling Fan', cat: 'Fan', watts: 55, defaultQty: 1, finish: 'White', trim: '' },
-  fan_52: { name: '52" Ceiling Fan', cat: 'Fan', watts: 65, defaultQty: 1, finish: 'Brushed Nickel', trim: '' },
-  fan_60: { name: '60" Ceiling Fan', cat: 'Fan', watts: 75, defaultQty: 1, finish: 'Matte Black', trim: '' },
-  undercab_12: { name: '12" Under Cabinet', cat: 'Under Cabinet', watts: 6, defaultQty: 2, finish: 'White', trim: '' },
-  undercab_24: { name: '24" Under Cabinet', cat: 'Under Cabinet', watts: 10, defaultQty: 2, finish: 'White', trim: '' },
-  undercab_36: { name: '36" Under Cabinet', cat: 'Under Cabinet', watts: 14, defaultQty: 1, finish: 'White', trim: '' },
-  landscape_path: { name: 'Path Light', cat: 'Landscape', watts: 3, defaultQty: 6, finish: 'Bronze', trim: '' },
-  landscape_spot: { name: 'Spot Light', cat: 'Landscape', watts: 7, defaultQty: 4, finish: 'Bronze', trim: '' },
-  landscape_well: { name: 'Well Light', cat: 'Landscape', watts: 5, defaultQty: 2, finish: 'Stainless', trim: '' },
-  track_3: { name: '3-Head Track', cat: 'Track', watts: 30, defaultQty: 1, finish: 'White', trim: '' },
-  track_4: { name: '4-Head Track', cat: 'Track', watts: 40, defaultQty: 1, finish: 'Brushed Nickel', trim: '' },
-  led_strip: { name: 'LED Strip (per ft)', cat: 'Other', watts: 4, defaultQty: 8, finish: '', trim: '' },
-  emergency: { name: 'Emergency Light', cat: 'Other', watts: 5, defaultQty: 1, finish: 'White', trim: '' },
-  exit_sign: { name: 'Exit Sign', cat: 'Other', watts: 3, defaultQty: 1, finish: 'White', trim: '' },
+  // Kitchen
+  refrigerator:  { name: 'Refrigerator',   w: 36, h: 30, cat: 'Kitchen',   color: '#7AAAC0', icon: '\u{1F9CA}' },
+  range:         { name: 'Range/Stove',     w: 30, h: 25, cat: 'Kitchen',   color: '#C08080', icon: '\u{1F525}' },
+  dishwasher:    { name: 'Dishwasher',      w: 24, h: 24, cat: 'Kitchen',   color: '#7898B0', icon: '\u{1F4A7}' },
+  sink_k:        { name: 'Kitchen Sink',    w: 33, h: 22, cat: 'Kitchen',   color: '#68A0B0', icon: '\u{1F6B0}' },
+  microwave:     { name: 'Microwave',       w: 30, h: 16, cat: 'Kitchen',   color: '#909090', icon: '\u{1F4E1}' },
+  island:        { name: 'Island',          w: 60, h: 36, cat: 'Kitchen',   color: '#A08868', icon: '\u{1F3DD}' },
+  hood:          { name: 'Range Hood',      w: 30, h: 18, cat: 'Kitchen',   color: '#888',    icon: '\u{1F32C}' },
+  // Cabinets
+  upper_cab:     { name: 'Upper Cabinet',   w: 36, h: 12, cat: 'Cabinets',  color: '#B09878', icon: '\u{1F5C4}' },
+  lower_cab:     { name: 'Lower Cabinet',   w: 36, h: 24, cat: 'Cabinets',  color: '#A08868', icon: '\u{1F5C4}' },
+  cab_corner:    { name: 'Corner Cabinet',  w: 36, h: 36, cat: 'Cabinets',  color: '#A08060', icon: '\u{1F4D0}' },
+  pantry_cab:    { name: 'Pantry',          w: 24, h: 24, cat: 'Cabinets',  color: '#987858', icon: '\u{1F5C4}' },
+  // Bathroom
+  toilet:        { name: 'Toilet',          w: 20, h: 28, cat: 'Bathroom',  color: '#B0B8C0', icon: '\u{1F6BD}' },
+  bathtub:       { name: 'Bathtub',         w: 60, h: 32, cat: 'Bathroom',  color: '#90A8C0', icon: '\u{1F6C1}' },
+  shower:        { name: 'Shower',          w: 36, h: 36, cat: 'Bathroom',  color: '#80A0B8', icon: '\u{1F6BF}' },
+  vanity:        { name: 'Vanity',          w: 48, h: 22, cat: 'Bathroom',  color: '#A09888', icon: '\u{1FA9E}' },
+  sink_b:        { name: 'Bath Sink',       w: 20, h: 18, cat: 'Bathroom',  color: '#80A8B8', icon: '\u{1F6B0}' },
+  // Laundry
+  washer:        { name: 'Washer',          w: 27, h: 27, cat: 'Laundry',   color: '#88A8C0', icon: '\u{1F455}' },
+  dryer:         { name: 'Dryer',           w: 27, h: 27, cat: 'Laundry',   color: '#B0A088', icon: '\u{1F300}' },
+  water_heater:  { name: 'Water Heater',    w: 22, h: 22, cat: 'Laundry',   color: '#C08868', icon: '\u{2668}' },
+  // Structure
+  door_36:       { name: 'Door 36\u2033',   w: 36, h: 6,  cat: 'Structure', color: '#887766', icon: '\u{1F6AA}' },
+  door_30:       { name: 'Door 30\u2033',   w: 30, h: 6,  cat: 'Structure', color: '#887766', icon: '\u{1F6AA}' },
+  window_36:     { name: 'Window 36\u2033', w: 36, h: 6,  cat: 'Structure', color: '#99BBDD', icon: '\u{1FA9F}' },
+  window_48:     { name: 'Window 48\u2033', w: 48, h: 6,  cat: 'Structure', color: '#99BBDD', icon: '\u{1FA9F}' },
+  window_60:     { name: 'Window 60\u2033', w: 60, h: 6,  cat: 'Structure', color: '#99BBDD', icon: '\u{1FA9F}' },
+  closet:        { name: 'Closet',          w: 48, h: 24, cat: 'Structure', color: '#998877', icon: '\u{1F454}' },
+  stairs:        { name: 'Stairs',          w: 36, h: 96, cat: 'Structure', color: '#887766', icon: '\u{1FA9C}' },
+  // Furniture
+  bed_king:      { name: 'King Bed',        w: 76, h: 80, cat: 'Furniture', color: '#9080B8', icon: '\u{1F6CF}' },
+  bed_queen:     { name: 'Queen Bed',       w: 60, h: 80, cat: 'Furniture', color: '#8878A8', icon: '\u{1F6CF}' },
+  desk:          { name: 'Desk',            w: 48, h: 24, cat: 'Furniture', color: '#988058', icon: '\u{1F5A5}' },
+  sofa:          { name: 'Sofa',            w: 84, h: 36, cat: 'Furniture', color: '#7888A8', icon: '\u{1F6CB}' },
+  tv_stand:      { name: 'TV/Media',        w: 60, h: 18, cat: 'Furniture', color: '#686868', icon: '\u{1F4FA}' },
+  dining_table:  { name: 'Dining Table',    w: 72, h: 42, cat: 'Furniture', color: '#A08050', icon: '\u{1F37D}' },
 };

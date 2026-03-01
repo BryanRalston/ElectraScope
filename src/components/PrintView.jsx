@@ -66,12 +66,13 @@ export default function PrintView({ project, onClose }) {
         if (rp.length === 0) return null;
         return (
           <div key={r.id} className="print-room">
-            <h3>{r.name} <span className="print-room-meta">({r.type}, {r.width}&apos; &times; {r.height}&apos;)</span></h3>
+            <h3>{r.name} <span className="print-room-meta">({r.type}, {r.width}&apos; &times; {r.height}&apos; &times; {r.ceilingHeight || 9}&apos; ceil)</span></h3>
             <table className="print-table">
               <thead>
                 <tr>
                   <th>Item</th>
                   <th>Qty</th>
+                  <th>Wall</th>
                   <th>Location</th>
                   <th>Height</th>
                   <th>Circuit</th>
@@ -83,8 +84,9 @@ export default function PrintView({ project, onClose }) {
                   <tr key={p.id}>
                     <td>{p.name}</td>
                     <td>{p.qty || 1}</td>
-                    <td>{p.location || '-'}</td>
-                    <td>{p.height || '-'}</td>
+                    <td>{p.wall ? p.wall.charAt(0).toUpperCase() + p.wall.slice(1) : '-'}</td>
+                    <td>{p.location || (p.wallPos ? p.wallPos.toFixed(1) + "' from left" : '-')}</td>
+                    <td>{p.mountHeight ? p.mountHeight + '"' : p.height || '-'}</td>
                     <td>{p.circuit || '-'}</td>
                     <td>{[p.spec, p.notes].filter(Boolean).join('; ') || '-'}</td>
                   </tr>
