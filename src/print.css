@@ -1,0 +1,59 @@
+@media print {
+  body {
+    background: white !important;
+    color: #000 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .header {
+    background: white !important;
+    border-bottom: 2px solid #333 !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    break-inside: avoid;
+  }
+
+  .btn-primary,
+  .btn-outline,
+  .btn-ghost,
+  .btn-sm,
+  .btn-delete,
+  .toast,
+  .modal-overlay {
+    display: none !important;
+  }
+
+  .scope-tag {
+    border: 1px solid #999 !important;
+  }
+
+  @page {
+    margin: 0.5in;
+  }
+
+  .print-close-btn { display: none !important; }
+  .print-view { padding: 0; max-width: none; }
+  .scope-table, .print-table { font-size: 11px; }
+  .scope-table th, .scope-table td, .print-table th, .print-table td {
+    border: 1px solid #999;
+    padding: 4px 6px;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
