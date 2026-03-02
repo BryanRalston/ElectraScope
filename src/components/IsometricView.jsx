@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ELEC, FIXTURES, WALL_LABELS } from '../constants';
+import { calculateRoute } from '../circuitUtils';
 
 // ─── Fixture physical heights (inches) ─────────────────────────────
 const FIXTURE_HEIGHTS = {
@@ -287,22 +288,20 @@ export default function IsometricView({ room }) {
       const rotX = (dx, dy) => dx * cosR - dy * sinR;
       const rotY = (dx, dy) => dx * sinR + dy * cosR;
 
-      // Bottom face corners (z=0), rotated around center
-      const b0 = p3d(rx + rotX(-halfW, -halfH), ry + rotY(-halfW, -halfH), 0);
-      const b1 = p3d(rx + rotX( halfW, -halfH), ry + rotY( halfW, -halfH), 0);
-      const b2 = p3d(rx + rotX( halfW,  halfH), ry + rotY( halfW,  halfH), 0);
-      const b3 = p3d(rx + rotX(-halfW,  halfH), ry + rotY(-halfW,  halfH), 0);
+      const baseZ = (p.mountHeight || (def && def.defaultMountHeight) || 0) / 12;
 
-      // Top face corners (z=fixtureH), rotated around center
-      const t0 = p3d(rx + rotX(-halfW, -halfH), ry + rotY(-halfW, -halfH), fixtureH);
-      const t1 = p3d(rx + rotX( halfW, -halfH), ry + rotY( halfW, -halfH), fixtureH);
-      const t2 = p3d(rx + rotX( halfW,  halfH), ry + rotY( halfW,  halfH), fixtureH);
-      const t3 = p3d(rx + rotX(-halfW,  halfH), ry + rotY(-halfW,  halfH), fixtureH);
+      const b0 = p3d(rx + rotX(-halfW, -halfH), ry + rotY(-halfW, -halfH), baseZ);
+      const b1 = p3d(rx + rotX( halfW, -halfH), ry + rotY( halfW, -halfH), baseZ);
+      const b2 = p3d(rx + rotX( halfW,  halfH), ry + rotY( halfW,  halfH), baseZ);
+      const b3 = p3d(rx + rotX(-halfW,  halfH), ry + rotY(-halfW,  halfH), baseZ);
 
-      // Top face center for icon placement
-      const topCenter = p3d(rx, ry, fixtureH);
-      // Below box center for label
-      const labelPos = p3d(rx, ry, 0);
+      const t0 = p3d(rx + rotX(-halfW, -halfH), ry + rotY(-halfW, -halfH), baseZ + fixtureH);
+      const t1 = p3d(rx + rotX( halfW, -halfH), ry + rotY( halfW, -halfH), baseZ + fixtureH);
+      const t2 = p3d(rx + rotX( halfW,  halfH), ry + rotY( halfW,  halfH), baseZ + fixtureH);
+      const t3 = p3d(rx + rotX(-halfW,  halfH), ry + rotY(-halfW,  halfH), baseZ + fixtureH);
+
+      const topCenter = p3d(rx, ry, baseZ + fixtureH);
+      const labelPos = p3d(rx, ry, baseZ);
 
       const strokeColor = color;
 
@@ -420,6 +419,33 @@ export default function IsometricView({ room }) {
     );
   }
 
+  // ── Circuit wire rendering ──
+  function renderCircuitWires() {
+    const circuits = room.circuits || [];
+    if (!circuits.length) return null;
+    return circuits.map(circuit =>
+      circuit.segments.map((seg, si) => {
+        const fromP = placements.find(p => p.id === seg.from);
+        const toP = placements.find(p => p.id === seg.to);
+        if (!fromP || !toP || fromP.cx === undefined || toP.cx === undefined) return null;
+        const route = calculateRoute(fromP, toP);
+        const pts = route.map(pt => p3d(pt.x / PLAN_SCALE, pt.y / PLAN_SCALE, 0));
+        const d = pts.map((pt, i) => `${i === 0 ? 'M' : 'L'}${pt.sx},${pt.sy}`).join(' ');
+        return (
+          <path
+            key={`cc-${circuit.id}-${si}`}
+            d={d}
+            fill="none"
+            stroke={circuit.color}
+            strokeWidth="2"
+            strokeDasharray="6,3"
+            opacity="0.8"
+          />
+        );
+      })
+    );
+  }
+
   // ── Determine wall paint order (back walls drawn first) ──
   // Sort so the wall further from camera is drawn first
   const sortedWalls = useMemo(() => {
@@ -529,6 +555,9 @@ export default function IsometricView({ room }) {
 
           {/* Wires */}
           {wires.map(w => renderWire(w))}
+
+          {/* Circuit wires */}
+          {renderCircuitWires()}
 
           {/* Placements */}
           {placements.map(p => renderPlacement(p))}

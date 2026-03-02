@@ -248,41 +248,75 @@ export const ELEC = {
 // w/h are in inches for floor plan rendering
 export const FIXTURES = {
   // Kitchen
-  refrigerator:  { name: 'Refrigerator',   w: 36, h: 30, cat: 'Kitchen',   color: '#7AAAC0', icon: '\u{1F9CA}' },
-  range:         { name: 'Range/Stove',     w: 30, h: 25, cat: 'Kitchen',   color: '#C08080', icon: '\u{1F525}' },
-  dishwasher:    { name: 'Dishwasher',      w: 24, h: 24, cat: 'Kitchen',   color: '#7898B0', icon: '\u{1F4A7}' },
-  sink_k:        { name: 'Kitchen Sink',    w: 33, h: 22, cat: 'Kitchen',   color: '#68A0B0', icon: '\u{1F6B0}' },
-  microwave:     { name: 'Microwave',       w: 30, h: 16, cat: 'Kitchen',   color: '#909090', icon: '\u{1F4E1}', defaultMountHeight: 54 },
-  island:        { name: 'Island',          w: 60, h: 36, cat: 'Kitchen',   color: '#A08868', icon: '\u{1F3DD}' },
-  hood:          { name: 'Range Hood',      w: 30, h: 18, cat: 'Kitchen',   color: '#888',    icon: '\u{1F32C}', defaultMountHeight: 66 },
+  refrigerator:  { name: 'Refrigerator',   w: 36, h: 30, wallH: 70, cat: 'Kitchen',   color: '#7AAAC0', icon: '\u{1F9CA}' },
+  range:         { name: 'Range/Stove',     w: 30, h: 25, wallH: 36, cat: 'Kitchen',   color: '#C08080', icon: '\u{1F525}' },
+  dishwasher:    { name: 'Dishwasher',      w: 24, h: 24, wallH: 34, cat: 'Kitchen',   color: '#7898B0', icon: '\u{1F4A7}' },
+  sink_k:        { name: 'Kitchen Sink',    w: 33, h: 22, wallH: 8,  cat: 'Kitchen',   color: '#68A0B0', icon: '\u{1F6B0}', defaultMountHeight: 28 },
+  microwave:     { name: 'Microwave',       w: 30, h: 16, wallH: 12, cat: 'Kitchen',   color: '#909090', icon: '\u{1F4E1}', defaultMountHeight: 54 },
+  island:        { name: 'Island',          w: 60, h: 36, wallH: 36, cat: 'Kitchen',   color: '#A08868', icon: '\u{1F3DD}' },
+  hood:          { name: 'Range Hood',      w: 30, h: 18, wallH: 6,  cat: 'Kitchen',   color: '#888',    icon: '\u{1F32C}', defaultMountHeight: 66 },
   // Cabinets
-  upper_cab:     { name: 'Upper Cabinet',   w: 36, h: 12, cat: 'Cabinets',  color: '#B09878', icon: '\u{1F5C4}', defaultMountHeight: 54 },
-  lower_cab:     { name: 'Lower Cabinet',   w: 36, h: 24, cat: 'Cabinets',  color: '#A08868', icon: '\u{1F5C4}' },
-  cab_corner:    { name: 'Corner Cabinet',  w: 36, h: 36, cat: 'Cabinets',  color: '#A08060', icon: '\u{1F4D0}' },
-  pantry_cab:    { name: 'Pantry',          w: 24, h: 24, cat: 'Cabinets',  color: '#987858', icon: '\u{1F5C4}' },
+  upper_cab:     { name: 'Upper Cabinet',   w: 36, h: 12, wallH: 30, cat: 'Cabinets',  color: '#B09878', icon: '\u{1F5C4}', defaultMountHeight: 54 },
+  lower_cab:     { name: 'Lower Cabinet',   w: 36, h: 24, wallH: 34, cat: 'Cabinets',  color: '#A08868', icon: '\u{1F5C4}' },
+  cab_corner:    { name: 'Corner Cabinet',  w: 36, h: 36, wallH: 34, cat: 'Cabinets',  color: '#A08060', icon: '\u{1F4D0}' },
+  pantry_cab:    { name: 'Pantry',          w: 24, h: 24, wallH: 84, cat: 'Cabinets',  color: '#987858', icon: '\u{1F5C4}' },
   // Bathroom
-  toilet:        { name: 'Toilet',          w: 20, h: 28, cat: 'Bathroom',  color: '#B0B8C0', icon: '\u{1F6BD}' },
-  bathtub:       { name: 'Bathtub',         w: 60, h: 32, cat: 'Bathroom',  color: '#90A8C0', icon: '\u{1F6C1}' },
-  shower:        { name: 'Shower',          w: 36, h: 36, cat: 'Bathroom',  color: '#80A0B8', icon: '\u{1F6BF}' },
-  vanity:        { name: 'Vanity',          w: 48, h: 22, cat: 'Bathroom',  color: '#A09888', icon: '\u{1FA9E}' },
-  sink_b:        { name: 'Bath Sink',       w: 20, h: 18, cat: 'Bathroom',  color: '#80A8B8', icon: '\u{1F6B0}' },
+  toilet:        { name: 'Toilet',          w: 20, h: 28, wallH: 28, cat: 'Bathroom',  color: '#B0B8C0', icon: '\u{1F6BD}' },
+  bathtub:       { name: 'Bathtub',         w: 60, h: 32, wallH: 20, cat: 'Bathroom',  color: '#90A8C0', icon: '\u{1F6C1}' },
+  shower:        { name: 'Shower',          w: 36, h: 36, wallH: 80, cat: 'Bathroom',  color: '#80A0B8', icon: '\u{1F6BF}' },
+  vanity:        { name: 'Vanity',          w: 48, h: 22, wallH: 34, cat: 'Bathroom',  color: '#A09888', icon: '\u{1FA9E}' },
+  sink_b:        { name: 'Bath Sink',       w: 20, h: 18, wallH: 8,  cat: 'Bathroom',  color: '#80A8B8', icon: '\u{1F6B0}', defaultMountHeight: 26 },
   // Laundry
-  washer:        { name: 'Washer',          w: 27, h: 27, cat: 'Laundry',   color: '#88A8C0', icon: '\u{1F455}' },
-  dryer:         { name: 'Dryer',           w: 27, h: 27, cat: 'Laundry',   color: '#B0A088', icon: '\u{1F300}' },
-  water_heater:  { name: 'Water Heater',    w: 22, h: 22, cat: 'Laundry',   color: '#C08868', icon: '\u{2668}' },
+  washer:        { name: 'Washer',          w: 27, h: 27, wallH: 36, cat: 'Laundry',   color: '#88A8C0', icon: '\u{1F455}' },
+  dryer:         { name: 'Dryer',           w: 27, h: 27, wallH: 36, cat: 'Laundry',   color: '#B0A088', icon: '\u{1F300}' },
+  water_heater:  { name: 'Water Heater',    w: 22, h: 22, wallH: 60, cat: 'Laundry',   color: '#C08868', icon: '\u{2668}' },
   // Structure
-  door_36:       { name: 'Door 36\u2033',   w: 36, h: 6,  cat: 'Structure', color: '#887766', icon: '\u{1F6AA}' },
-  door_30:       { name: 'Door 30\u2033',   w: 30, h: 6,  cat: 'Structure', color: '#887766', icon: '\u{1F6AA}' },
-  window_36:     { name: 'Window 36\u2033', w: 36, h: 6,  cat: 'Structure', color: '#99BBDD', icon: '\u{1FA9F}' },
-  window_48:     { name: 'Window 48\u2033', w: 48, h: 6,  cat: 'Structure', color: '#99BBDD', icon: '\u{1FA9F}' },
-  window_60:     { name: 'Window 60\u2033', w: 60, h: 6,  cat: 'Structure', color: '#99BBDD', icon: '\u{1FA9F}' },
-  closet:        { name: 'Closet',          w: 48, h: 24, cat: 'Structure', color: '#998877', icon: '\u{1F454}' },
-  stairs:        { name: 'Stairs',          w: 36, h: 96, cat: 'Structure', color: '#887766', icon: '\u{1FA9C}' },
+  door_36:       { name: 'Door 36\u2033',   w: 36, h: 6,  wallH: 80, cat: 'Structure', color: '#887766', icon: '\u{1F6AA}' },
+  door_30:       { name: 'Door 30\u2033',   w: 30, h: 6,  wallH: 80, cat: 'Structure', color: '#887766', icon: '\u{1F6AA}' },
+  window_36:     { name: 'Window 36\u2033', w: 36, h: 6,  wallH: 36, cat: 'Structure', color: '#99BBDD', icon: '\u{1FA9F}', defaultMountHeight: 36 },
+  window_48:     { name: 'Window 48\u2033', w: 48, h: 6,  wallH: 36, cat: 'Structure', color: '#99BBDD', icon: '\u{1FA9F}', defaultMountHeight: 36 },
+  window_60:     { name: 'Window 60\u2033', w: 60, h: 6,  wallH: 36, cat: 'Structure', color: '#99BBDD', icon: '\u{1FA9F}', defaultMountHeight: 36 },
+  closet:        { name: 'Closet',          w: 48, h: 24, wallH: 96, cat: 'Structure', color: '#998877', icon: '\u{1F454}' },
+  stairs:        { name: 'Stairs',          w: 36, h: 96, wallH: 96, cat: 'Structure', color: '#887766', icon: '\u{1FA9C}' },
   // Furniture
-  bed_king:      { name: 'King Bed',        w: 76, h: 80, cat: 'Furniture', color: '#9080B8', icon: '\u{1F6CF}' },
-  bed_queen:     { name: 'Queen Bed',       w: 60, h: 80, cat: 'Furniture', color: '#8878A8', icon: '\u{1F6CF}' },
-  desk:          { name: 'Desk',            w: 48, h: 24, cat: 'Furniture', color: '#988058', icon: '\u{1F5A5}' },
-  sofa:          { name: 'Sofa',            w: 84, h: 36, cat: 'Furniture', color: '#7888A8', icon: '\u{1F6CB}' },
-  tv_stand:      { name: 'TV/Media',        w: 60, h: 18, cat: 'Furniture', color: '#686868', icon: '\u{1F4FA}' },
-  dining_table:  { name: 'Dining Table',    w: 72, h: 42, cat: 'Furniture', color: '#A08050', icon: '\u{1F37D}' },
+  bed_king:      { name: 'King Bed',        w: 76, h: 80, wallH: 24, cat: 'Furniture', color: '#9080B8', icon: '\u{1F6CF}' },
+  bed_queen:     { name: 'Queen Bed',       w: 60, h: 80, wallH: 24, cat: 'Furniture', color: '#8878A8', icon: '\u{1F6CF}' },
+  desk:          { name: 'Desk',            w: 48, h: 24, wallH: 30, cat: 'Furniture', color: '#988058', icon: '\u{1F5A5}' },
+  sofa:          { name: 'Sofa',            w: 84, h: 36, wallH: 34, cat: 'Furniture', color: '#7888A8', icon: '\u{1F6CB}' },
+  tv_stand:      { name: 'TV/Media',        w: 60, h: 18, wallH: 24, cat: 'Furniture', color: '#686868', icon: '\u{1F4FA}' },
+  dining_table:  { name: 'Dining Table',    w: 72, h: 42, wallH: 30, cat: 'Furniture', color: '#A08050', icon: '\u{1F37D}' },
 };
+
+// ─── Auto-labeling ──────────────────────────────────────────────
+// Returns "Upper Cabinet A", "Upper Cabinet B", etc. for fixtures
+// Returns "Duplex Outlet 1", "Duplex Outlet 2", etc. for electrical
+export function autoLabel(baseName, existingPlacements, isFixture = false) {
+  const same = existingPlacements.filter(p => {
+    const pBase = (p.name || '').replace(/\s+[A-Z]$/, '').replace(/\s+\d+$/, '');
+    return pBase === baseName;
+  });
+  const n = same.length + 1;
+  if (isFixture) {
+    // A, B, C, ... Z, AA, AB, ...
+    const letter = n <= 26 ? String.fromCharCode(64 + n) : String.fromCharCode(64 + Math.floor((n - 1) / 26)) + String.fromCharCode(65 + ((n - 1) % 26));
+    return `${baseName} ${letter}`;
+  }
+  return `${baseName} ${n}`;
+}
+
+// ─── Circuit Wiring ─────────────────────────────────────────────
+export const SNAP_RADIUS = 20; // px — how close a click must be to snap to a device
+export const DEFAULT_AMPERAGE = 20;
+export const DEFAULT_WIRE_GAUGE = '12';
+export const CIRCUIT_COLORS = [
+  '#4af',     // blue
+  '#f59e0b',  // amber
+  '#10b981',  // green
+  '#ef4444',  // red
+  '#8b5cf6',  // purple
+  '#ec4899',  // pink
+  '#06b6d4',  // cyan
+  '#84cc16',  // lime
+  '#f97316',  // orange
+  '#6366f1',  // indigo
+];

@@ -3,7 +3,7 @@ import { uid, RTYPES, DEFAULT_CEILING_HEIGHT } from '../constants';
 import { makeShareUrl } from '../share';
 import { EmptyState } from './ui';
 
-export default function ProjectView({ project, onUpdate, onSelectRoom, onDeleteRoom, onScope, onPrint, flash }) {
+export default function ProjectView({ project, onUpdate, onSelectRoom, onDeleteRoom, onScope, onPanel, onPrint, flash }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ type: 'Living Room', customName: '', width: 12, height: 10, ceilingHeight: DEFAULT_CEILING_HEIGHT });
   const [shareCode, setShareCode] = useState('');
@@ -54,6 +54,7 @@ export default function ProjectView({ project, onUpdate, onSelectRoom, onDeleteR
         <div className="row" style={{ marginTop: 12 }}>
           <button className="btn-outline" onClick={handleShare}>Share</button>
           <button className="btn-outline" onClick={onScope}>Scope of Work</button>
+          <button className="btn-outline" onClick={onPanel}>Panel Schedule</button>
           <button className="btn-primary" onClick={onPrint}>Print</button>
         </div>
       </div>

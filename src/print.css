@@ -52,6 +52,37 @@
     padding: 4px 6px;
   }
 
+  .print-summary-grid {
+    display: flex;
+    gap: 12px;
+    margin: 12px 0;
+  }
+  .print-stat {
+    flex: 1;
+    text-align: center;
+    border: 1px solid #999;
+    padding: 6px;
+  }
+  .print-stat-num { font-size: 18px; font-weight: 700; }
+  .print-stat-label { font-size: 10px; color: #555; text-transform: uppercase; }
+
+  .print-section-title {
+    margin: 16px 0 6px;
+    font-size: 13px;
+    border-bottom: 1px solid #666;
+    padding-bottom: 3px;
+  }
+
+  .print-panel-table td,
+  .print-panel-table th {
+    padding: 3px 5px !important;
+    font-size: 10px !important;
+  }
+
+  .print-row-warn { background: #fff0f0 !important; }
+
+  .print-room { page-break-inside: avoid; }
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

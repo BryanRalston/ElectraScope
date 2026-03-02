@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { ELEC, FIXTURES, DEFAULT_MOUNT_HEIGHTS, HEIGHT_REFERENCES, uid, clamp } from '../constants';
+import { ELEC, FIXTURES, DEFAULT_MOUNT_HEIGHTS, HEIGHT_REFERENCES, uid, clamp, autoLabel } from '../constants';
 import { SymIcon } from './ui';
 
 const SCALE = 40; // pixels per foot
@@ -48,12 +48,21 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
     const roomH = room.height * SCALE;
     let wallPos;
     switch (wall) {
-      case 'north': case 'south': wallPos = p.cx / SCALE; break;
-      case 'east': case 'west':   wallPos = p.cy / SCALE; break;
+      case 'north': wallPos = p.cx / SCALE; break;
+      case 'south': wallPos = (roomW - p.cx) / SCALE; break; // mirror: left=east when facing south
+      case 'east':  wallPos = p.cy / SCALE; break;
+      case 'west':  wallPos = (roomH - p.cy) / SCALE; break; // mirror: left=south when facing west
       default: wallPos = 0;
     }
     wallPos = clamp(wallPos, 0, wallLengthFt);
-    return { ...p, wallPos: Math.round(wallPos * 10) / 10, mountHeight: p.mountHeight || 48 };
+    // Use fixture's defaultMountHeight or electrical category default, fallback to 0 (floor)
+    let inferredHeight = 0;
+    if (p.fixtureKey && FIXTURES[p.fixtureKey]) {
+      inferredHeight = FIXTURES[p.fixtureKey].defaultMountHeight || 0;
+    } else if (p.elecKey && ELEC[p.elecKey]) {
+      inferredHeight = DEFAULT_MOUNT_HEIGHTS[ELEC[p.elecKey].cat] || 48;
+    }
+    return { ...p, wallPos: Math.round(wallPos * 10) / 10, mountHeight: p.mountHeight ?? inferredHeight };
   });
 
   // --- Coordinate helpers ---
@@ -91,9 +100,9 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
   const wallPosToTopView = (wallPosFt) => {
     switch (wall) {
       case 'north': return { cx: wallPosFt * SCALE, cy: 0 };
-      case 'south': return { cx: wallPosFt * SCALE, cy: room.height * SCALE };
+      case 'south': return { cx: (wallLengthFt - wallPosFt) * SCALE, cy: room.height * SCALE }; // mirror back
       case 'east':  return { cx: room.width * SCALE, cy: wallPosFt * SCALE };
-      case 'west':  return { cx: 0, cy: wallPosFt * SCALE };
+      case 'west':  return { cx: 0, cy: (wallLengthFt - wallPosFt) * SCALE }; // mirror back
       default:      return { cx: wallPosFt * SCALE, cy: 0 };
     }
   };
@@ -119,7 +128,7 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
       const p = {
         id: uid(),
         elecKey: selectedElec,
-        name: def.name,
+        name: autoLabel(def.name, placements, false),
         qty: 1,
         location: '',
         height: '',
@@ -144,7 +153,7 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
       const p = {
         id: uid(),
         fixtureKey: selectedFixture,
-        name: def.name,
+        name: autoLabel(def.name, placements, true),
         qty: 1,
         location: '',
         height: '',
@@ -349,7 +358,7 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
             {ceilingHeight}&apos;
           </text>
 
-          {/* Placed electrical items on this wall */}
+          {/* Placed electrical items on this wall — non-interactive in fixture mode */}
           {wallPlacements.filter(p => p.elecKey).map(p => {
             const def = ELEC[p.elecKey];
             if (!def) return null;
@@ -358,12 +367,14 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
             const px = feetToSvgX(clampedWallPos);
             const py = inchesToSvgY(clampedMountHeight);
             const isSelected = p.id === selectedPlacement;
+            const passThrough = mode === 'fixture';
             return (
               <g
                 key={p.id}
                 transform={`translate(${px}, ${py})`}
-                onMouseDown={(e) => handleMouseDown(e, p.id)}
-                style={{ cursor: 'move' }}
+                onMouseDown={passThrough ? undefined : (e) => handleMouseDown(e, p.id)}
+                style={{ cursor: passThrough ? 'default' : 'move', pointerEvents: passThrough ? 'none' : 'auto' }}
+                opacity={passThrough ? 0.4 : 1}
               >
                 {/* Selection highlight ring */}
                 {isSelected && (
@@ -408,29 +419,36 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
             );
           })}
 
-          {/* Placed fixtures on this wall */}
+          {/* Placed fixtures on this wall — non-interactive in electric mode so clicks pass through */}
           {wallPlacements.filter(p => p.fixtureKey).map(p => {
             const def = FIXTURES[p.fixtureKey];
             if (!def) return null;
             const fw = (p.w || def.w) * SCALE / 12; // width in SVG pixels
-            const fh = (p.h || def.h) * SCALE / 12; // height in SVG pixels
+            const fh = (def.wallH || p.h || def.h) * SCALE / 12; // physical height on wall
             const fcolor = p.color || def.color || '#888';
             const clampedWallPos = clamp(p.wallPos || 0, 0, wallLengthFt);
             const px = feetToSvgX(clampedWallPos);
+            // Clamp so fixture stays within wall bounds
+            const halfW = fw / 2;
+            const minX = PAD + halfW;
+            const maxX = PAD + W - halfW;
+            const clampedPx = Math.max(minX, Math.min(maxX, px));
             const mountHeight = p.mountHeight || (def && def.defaultMountHeight) || 0;
             const bottomEdgeY = inchesToSvgY(mountHeight);
             const py = bottomEdgeY - fh;
             const isSelected = p.id === selectedPlacement;
+            const passThrough = mode === 'electric';
             return (
               <g
                 key={p.id}
-                onMouseDown={(e) => handleMouseDown(e, p.id)}
-                style={{ cursor: 'move' }}
+                onMouseDown={passThrough ? undefined : (e) => handleMouseDown(e, p.id)}
+                style={{ cursor: passThrough ? 'default' : 'move', pointerEvents: passThrough ? 'none' : 'auto' }}
+                opacity={passThrough ? 0.4 : 1}
               >
                 {/* Selection highlight */}
                 {isSelected && (
                   <rect
-                    x={px - fw / 2 - 3}
+                    x={clampedPx - fw / 2 - 3}
                     y={py - 3}
                     width={fw + 6}
                     height={fh + 6}
@@ -442,7 +460,7 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
                   />
                 )}
                 <rect
-                  x={px - fw / 2}
+                  x={clampedPx - fw / 2}
                   y={py}
                   width={fw}
                   height={fh}
@@ -453,7 +471,7 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
                 />
                 {/* Fixture icon */}
                 <text
-                  x={px}
+                  x={clampedPx}
                   y={py + fh / 2 - 5}
                   textAnchor="middle"
                   dominantBaseline="middle"
@@ -464,7 +482,7 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
                 </text>
                 {/* Fixture name */}
                 <text
-                  x={px}
+                  x={clampedPx}
                   y={py + fh / 2 + 7}
                   textAnchor="middle"
                   dominantBaseline="middle"
@@ -497,8 +515,28 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
                   {p.elecKey && <SymIcon sym={p.elecKey} size={20} />}
                   <span className="placement-name">{p.name}</span>
                   {p.mountHeight !== undefined && (
-                    <span className="meta" style={{ marginLeft: 8 }}>
+                    <span className="meta" style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <button
+                        style={{ background: 'none', border: '1px solid #C47A15', color: '#C47A15', cursor: 'pointer', padding: '0 4px', fontSize: 10, lineHeight: '16px', borderRadius: 3 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const newHeight = Math.max(0, (p.mountHeight || 0) - 6);
+                          const updated = placements.map(pl => pl.id === p.id ? { ...pl, mountHeight: newHeight } : pl);
+                          onUpdate({ ...room, placements: updated });
+                        }}
+                        title="Lower by 6 inches"
+                      >&#9660;</button>
                       {p.mountHeight}" from floor
+                      <button
+                        style={{ background: 'none', border: '1px solid #C47A15', color: '#C47A15', cursor: 'pointer', padding: '0 4px', fontSize: 10, lineHeight: '16px', borderRadius: 3 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const newHeight = Math.min(ceilingHeightIn, (p.mountHeight || 0) + 6);
+                          const updated = placements.map(pl => pl.id === p.id ? { ...pl, mountHeight: newHeight } : pl);
+                          onUpdate({ ...room, placements: updated });
+                        }}
+                        title="Raise by 6 inches"
+                      >&#9650;</button>
                     </span>
                   )}
                   {p.wallPos !== undefined && (

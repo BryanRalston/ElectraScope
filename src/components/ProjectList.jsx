@@ -3,7 +3,7 @@ import { uid } from '../constants';
 import { decodeProject } from '../share';
 import { EmptyState } from './ui';
 
-export default function ProjectList({ projects, onSelect, onCreated, onDelete, onImport, flash }) {
+export default function ProjectList({ projects, onSelect, onCreated, onDelete, onImport, flash, onTutorial, onExample }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', address: '', client: '', notes: '' });
   const [importCode, setImportCode] = useState('');
@@ -46,6 +46,8 @@ export default function ProjectList({ projects, onSelect, onCreated, onDelete, o
       <div className="section-header">
         <h2 className="section-title">Projects</h2>
         <div className="row">
+          <button className="btn-outline" onClick={onExample}>📋 Example Project</button>
+          <button className="btn-outline" onClick={onTutorial}>📖 Tutorial</button>
           <button className="btn-outline" onClick={() => { setShowImport(!showImport); setShowForm(false); }}>
             Import
           </button>

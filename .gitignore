@@ -43,3 +43,6 @@ lerna-debug.log*
 
 # PWA dev artifacts
 dev-dist
+
+# Screenshots
+*.png

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ELEC, FIXTURES, ECAT, FCAT, uid } from '../constants';
+import { ELEC, FIXTURES, ECAT, FCAT, uid, clamp } from '../constants';
 import { SymIcon } from './ui';
 import ModelImport from './ModelImport';
 
@@ -208,15 +208,33 @@ export default function RoomEditor({ room, onUpdate, onCanvas, flash }) {
                     onChange={e => updatePlacement(p.id, 'circuit', e.target.value)}
                   />
                 </div>
-                <div className="edit-row">
-                  <label className="edit-label">Spec</label>
-                  <input
-                    className="edit-input"
-                    placeholder="Specifications"
-                    value={p.spec}
-                    onChange={e => updatePlacement(p.id, 'spec', e.target.value)}
-                  />
-                </div>
+                {p.fixtureKey ? (
+                  <div className="edit-row">
+                    <label className="edit-label">Size</label>
+                    <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+                      <span className="meta">W</span>
+                      <input className="edit-input" type="number" min={6} max={120}
+                        style={{ width: 60 }}
+                        value={p.w || 30}
+                        onChange={e => updatePlacement(p.id, 'w', clamp(Number(e.target.value) || 6, 6, 120))} />
+                      <span className="meta">"</span>
+                      <span className="meta">&times;</span>
+                      <span className="meta">H</span>
+                      <input className="edit-input" type="number" min={6} max={120}
+                        style={{ width: 60 }}
+                        value={p.h || 30}
+                        onChange={e => updatePlacement(p.id, 'h', clamp(Number(e.target.value) || 6, 6, 120))} />
+                      <span className="meta">"</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="edit-row">
+                    <label className="edit-label">Spec</label>
+                    <input className="edit-input" placeholder="Specifications"
+                      value={p.spec}
+                      onChange={e => updatePlacement(p.id, 'spec', e.target.value)} />
+                  </div>
+                )}
                 <div className="edit-row">
                   <label className="edit-label">Notes</label>
                   <input

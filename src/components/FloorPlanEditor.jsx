@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo, Suspense } from 'react';
-import { ELEC, FIXTURES, ECAT, FCAT, WALLS, WALL_LABELS, DEFAULT_CEILING_HEIGHT, uid, clamp } from '../constants';
+import { ELEC, FIXTURES, ECAT, FCAT, WALLS, WALL_LABELS, DEFAULT_CEILING_HEIGHT, uid, clamp, SNAP_RADIUS, autoLabel } from '../constants';
+import { findNearestDevice, calculateRoute, createCircuit, addSegmentToCircuit, getDevicesOnCircuit, findCircuitEndpoint, removeDeviceFromCircuits, syncPlacementCircuitFields, getCircuitForPlacement } from '../circuitUtils';
 import { SymIcon } from './ui';
 import WallElevationView from './WallElevationView';
 import IsometricView from './IsometricView';
@@ -39,6 +40,10 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
   const [drawing, setDrawing] = useState(false);
   const [drawColor, setDrawColor] = useState('#ffffff');
   const [currentPath, setCurrentPath] = useState([]);
+  const [circuitChain, setCircuitChain] = useState(null); // { circuitId, lastPlacementId }
+  const [mousePos, setMousePos] = useState(null);
+  const [hoveredDevice, setHoveredDevice] = useState(null);
+  const [expandedCircuitId, setExpandedCircuitId] = useState(null);
   const [photoOpacity, setPhotoOpacity] = useState(0.3);
   const [showDims, setShowDims] = useState(false);
   const [dimForm, setDimForm] = useState({ width: room.width, height: room.height, ceilingHeight: room.ceilingHeight || DEFAULT_CEILING_HEIGHT });
@@ -85,7 +90,7 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
       const p = {
         id: uid(),
         elecKey: selectedElec,
-        name: def.name,
+        name: autoLabel(def.name, placements, false),
         qty: 1,
         location: '',
         height: '',
@@ -107,7 +112,7 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
       const p = {
         id: uid(),
         fixtureKey: selectedFixture,
-        name: def.name,
+        name: autoLabel(def.name, placements, true),
         qty: 1,
         location: '',
         height: '',
@@ -124,6 +129,40 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
       };
       onUpdate({ ...room, placements: [...placements, p] });
       flash(`Placed ${def.name}`);
+      return;
+    }
+
+    if (mode === 'circuit') {
+      const nearest = findNearestDevice(placements, rx, ry, SNAP_RADIUS);
+      if (!nearest) return;
+
+      if (!circuitChain) {
+        // Check if clicking an endpoint of existing circuit
+        const existing = findCircuitEndpoint(room.circuits || [], nearest.id);
+        if (existing) {
+          setCircuitChain({ circuitId: existing.id, lastPlacementId: nearest.id });
+          flash('Extending circuit #' + existing.number);
+          return;
+        }
+        // Start new circuit
+        const newCircuit = createCircuit(room.circuits || []);
+        setCircuitChain({ circuitId: newCircuit.id, lastPlacementId: nearest.id });
+        onUpdate({ ...room, circuits: [...(room.circuits || []), newCircuit] });
+        flash('Circuit #' + newCircuit.number + ' started');
+        return;
+      }
+
+      // Extending chain
+      if (nearest.id === circuitChain.lastPlacementId) return;
+
+      const circuits = (room.circuits || []).map(c => {
+        if (c.id !== circuitChain.circuitId) return c;
+        return addSegmentToCircuit(c, circuitChain.lastPlacementId, nearest.id);
+      });
+      const updatedPlacements = syncPlacementCircuitFields(placements, circuits);
+      setCircuitChain({ ...circuitChain, lastPlacementId: nearest.id });
+      onUpdate({ ...room, circuits, placements: updatedPlacements });
+      flash('Connected');
       return;
     }
 
@@ -150,11 +189,11 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
       flash('Wire placed');
       return;
     }
-  }, [mode, selectedElec, selectedFixture, wireStart, room, placements, wires, W, H, getSvgPoint, onUpdate, flash]);
+  }, [mode, selectedElec, selectedFixture, wireStart, circuitChain, room, placements, wires, W, H, getSvgPoint, onUpdate, flash]);
 
   const handleMouseDown = useCallback((e, placementId) => {
-    // In wire mode, don't start dragging — let click bubble for wire placement
-    if (mode === 'wire') return;
+    // In wire/circuit mode, don't start dragging — let click bubble for placement
+    if (mode === 'wire' || mode === 'circuit') return;
     e.stopPropagation();
     setSelectedPlacement(placementId);
     const pt = getSvgPoint(e);
@@ -172,6 +211,14 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
       const pt = getSvgPoint(e);
       setCurrentPath(prev => [...prev, { x: pt.x - PAD, y: pt.y - PAD }]);
       return;
+    }
+
+    if (mode === 'circuit') {
+      const pt = getSvgPoint(e);
+      const rx = pt.x - PAD;
+      const ry = pt.y - PAD;
+      setMousePos({ x: rx, y: ry });
+      setHoveredDevice(findNearestDevice(placements, rx, ry, SNAP_RADIUS)?.id || null);
     }
 
     if (!dragging) return;
@@ -214,21 +261,132 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
     onUpdate({ ...room, placements: updated });
   };
 
-  const resizePlacement = (delta) => {
+  const resizePlacement = (dim, value) => {
     if (!selectedPlacement) return;
     const updated = placements.map(p => {
       if (p.id !== selectedPlacement || !p.fixtureKey) return p;
-      const ratio = p.h / p.w;
-      const nw = clamp((p.w || 30) + delta, 6, 120);
-      return { ...p, w: nw, h: Math.round(nw * ratio) };
+      return { ...p, [dim]: clamp(value, 6, 120) };
     });
     onUpdate({ ...room, placements: updated });
+  };
+
+  const autoFitPlacement = () => {
+    if (!selectedPlacement) return;
+    const p = placements.find(pl => pl.id === selectedPlacement);
+    if (!p || !p.fixtureKey || p.cx == null || p.cy == null) return;
+
+    const GAP_INCHES = 1; // 1 inch gap between items (real-world best practice)
+    const GAP_PX = GAP_INCHES * SCALE / 12;
+
+    // Determine which wall this item is nearest to
+    const distN = p.cy;
+    const distS = H - p.cy;
+    const distW = p.cx;
+    const distE = W - p.cx;
+    const minDist = Math.min(distN, distS, distW, distE);
+    const isHorizontalWall = (minDist === distN || minDist === distS);
+
+    // Get neighboring fixtures that are truly side-by-side.
+    // Only count items that sit ON THE FLOOR at the same depth class:
+    // cabinets, appliances (fridge, range, dishwasher, washer, dryer).
+    // Skip: sinks (drop into cabinets), windows (above), hoods (above),
+    // upper cabinets (mounted above lowers), structural items.
+    const FLOOR_ITEMS = new Set([
+      'lower_cab', 'cab_corner', 'pantry_cab', 'island',
+      'refrigerator', 'range', 'dishwasher', 'washer', 'dryer', 'water_heater',
+      'bathtub', 'shower', 'vanity', 'toilet',
+      'bed_king', 'bed_queen', 'desk', 'sofa', 'tv_stand', 'dining_table',
+    ]);
+    const UPPER_ITEMS = new Set(['upper_cab', 'microwave', 'hood']);
+    const pIsUpper = UPPER_ITEMS.has(p.fixtureKey);
+    const pIsFloor = FLOOR_ITEMS.has(p.fixtureKey);
+    const pGroup = pIsUpper ? 'upper' : pIsFloor ? 'floor' : 'other';
+
+    const neighbors = placements.filter(n => {
+      if (n.id === p.id || n.cx == null || !n.fixtureKey) return false;
+      // Must be in the same height group (floor items with floor, uppers with uppers)
+      const nIsUpper = UPPER_ITEMS.has(n.fixtureKey);
+      const nIsFloor = FLOOR_ITEMS.has(n.fixtureKey);
+      const nGroup = nIsUpper ? 'upper' : nIsFloor ? 'floor' : 'other';
+      if (nGroup !== pGroup) return false;
+
+      // Must be on the same wall (close perpendicular distance)
+      const WALL_THRESHOLD = 3 * SCALE;
+      if (isHorizontalWall) {
+        return Math.abs(n.cy - p.cy) < WALL_THRESHOLD;
+      } else {
+        return Math.abs(n.cx - p.cx) < WALL_THRESHOLD;
+      }
+    });
+
+    if (isHorizontalWall) {
+      // Working along x axis — find closest neighbor to left and right by CENTER position
+      let leftBound = 0; // room wall (plan coordinates, not SVG)
+      let rightBound = W;
+
+      for (const n of neighbors) {
+        const nHalfW = (n.w || 30) * SCALE / 24;
+        const nLeft = n.cx - nHalfW;
+        const nRight = n.cx + nHalfW;
+
+        // Is this neighbor's center to the left of our center?
+        if (n.cx < p.cx) {
+          // Its right edge is a potential left boundary
+          const bound = nRight + GAP_PX;
+          if (bound > leftBound) leftBound = bound;
+        }
+        // Is this neighbor's center to the right?
+        else if (n.cx > p.cx) {
+          const bound = nLeft - GAP_PX;
+          if (bound < rightBound) rightBound = bound;
+        }
+        // Same center — skip (probably overlapping)
+      }
+
+      const availablePx = Math.max(rightBound - leftBound, SCALE);
+      const newWidthInches = Math.round(availablePx * 12 / SCALE);
+      const newCx = (leftBound + rightBound) / 2;
+      const updated = placements.map(pl =>
+        pl.id === selectedPlacement ? { ...pl, w: clamp(newWidthInches, 6, 120), cx: newCx } : pl
+      );
+      onUpdate({ ...room, placements: updated });
+      flash(`Auto-fit: ${newWidthInches}" wide`);
+    } else {
+      // Working along y axis
+      let topBound = 0;
+      let bottomBound = H;
+
+      for (const n of neighbors) {
+        const nHalfH = (n.h || 30) * SCALE / 24;
+        const nTop = n.cy - nHalfH;
+        const nBottom = n.cy + nHalfH;
+
+        if (n.cy < p.cy) {
+          const bound = nBottom + GAP_PX;
+          if (bound > topBound) topBound = bound;
+        } else if (n.cy > p.cy) {
+          const bound = nTop - GAP_PX;
+          if (bound < bottomBound) bottomBound = bound;
+        }
+      }
+
+      const availablePx = Math.max(bottomBound - topBound, SCALE);
+      const newDepthInches = Math.round(availablePx * 12 / SCALE);
+      const newCy = (topBound + bottomBound) / 2;
+      const updated = placements.map(pl =>
+        pl.id === selectedPlacement ? { ...pl, h: clamp(newDepthInches, 6, 120), cy: newCy } : pl
+      );
+      onUpdate({ ...room, placements: updated });
+      flash(`Auto-fit: ${newDepthInches}" deep`);
+    }
   };
 
   const deletePlacement = () => {
     if (!selectedPlacement) return;
     const updated = placements.filter(p => p.id !== selectedPlacement);
-    onUpdate({ ...room, placements: updated });
+    const updatedCircuits = removeDeviceFromCircuits(room.circuits || [], selectedPlacement);
+    const syncedPlacements = syncPlacementCircuitFields(updated, updatedCircuits);
+    onUpdate({ ...room, placements: syncedPlacements, circuits: updatedCircuits });
     setSelectedPlacement(null);
     flash('Item removed');
   };
@@ -267,6 +425,17 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
     setShowDims(false);
     flash('Dimensions updated');
   };
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'Escape' && circuitChain) {
+        setCircuitChain(null);
+        flash('Circuit finished');
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [circuitChain, flash]);
 
   const pathToD = (points) => {
     if (!points || points.length < 2) return '';
@@ -331,13 +500,13 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
       {/* Mode toolbar — shown for top, wall, and model views (not isometric 3D) */}
       {viewTab !== '3d' && (
         <div className="toolbar">
-          {['fixture', 'electric', 'wire', 'draw'].map(m => (
+          {['fixture', 'electric', 'circuit', 'wire', 'draw'].map(m => (
             <button
               key={m}
               className={mode === m ? 'tool-btn tool-active' : 'tool-btn'}
-              onClick={() => { setMode(m); setWireStart(null); setDrawing(false); setCurrentPath([]); }}
+              onClick={() => { setMode(m); setCircuitChain(null); setWireStart(null); setDrawing(false); setCurrentPath([]); }}
             >
-              {m.charAt(0).toUpperCase() + m.slice(1)}
+              {m === 'circuit' ? '\u26A1 Circuit' : m.charAt(0).toUpperCase() + m.slice(1)}
             </button>
           ))}
         </div>
@@ -404,6 +573,14 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
         </div>
       )}
 
+      {mode === 'circuit' && (
+        <div className="meta" style={{ marginTop: 8, textAlign: 'center', padding: 8 }}>
+          {circuitChain
+            ? '\u26A1 Click next device to connect. Press Esc to finish circuit.'
+            : '\u26A1 Click a device to start a new circuit. Click endpoints to extend existing.'}
+        </div>
+      )}
+
       {/* ═══ TOP VIEW CONTENT ═══ */}
       {viewTab === 'top' && <>
 
@@ -414,10 +591,21 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
             <span className="placement-name">{selectedP.name}</span>
             <button className="btn-sm btn-outline" onClick={rotatePlacement}>Rotate 45&deg;</button>
             {selectedP.fixtureKey && (
-              <>
-                <button className="btn-sm btn-outline" onClick={() => resizePlacement(4)}>+</button>
-                <button className="btn-sm btn-outline" onClick={() => resizePlacement(-4)}>-</button>
-              </>
+              <div className="row" style={{ alignItems: 'center', gap: 3 }}>
+                <span className="meta" style={{ fontSize: 11 }}>W:</span>
+                <button className="btn-sm btn-outline" style={{ padding: '2px 6px', fontSize: 11, minWidth: 0 }} onClick={() => resizePlacement('w', (selectedP.w || 30) - 2)}>&minus;</button>
+                <input type="number" className="edit-input" style={{ width: 40, textAlign: 'center', padding: '2px 4px', fontSize: 11 }}
+                  value={selectedP.w || 30} min={6} max={120}
+                  onChange={e => resizePlacement('w', Number(e.target.value) || 30)} />
+                <button className="btn-sm btn-outline" style={{ padding: '2px 6px', fontSize: 11, minWidth: 0 }} onClick={() => resizePlacement('w', (selectedP.w || 30) + 2)}>+</button>
+                <span className="meta" style={{ marginLeft: 4, fontSize: 11 }}>D:</span>
+                <button className="btn-sm btn-outline" style={{ padding: '2px 6px', fontSize: 11, minWidth: 0 }} onClick={() => resizePlacement('h', (selectedP.h || 30) - 2)}>&minus;</button>
+                <input type="number" className="edit-input" style={{ width: 40, textAlign: 'center', padding: '2px 4px', fontSize: 11 }}
+                  value={selectedP.h || 30} min={6} max={120}
+                  onChange={e => resizePlacement('h', Number(e.target.value) || 30)} />
+                <button className="btn-sm btn-outline" style={{ padding: '2px 6px', fontSize: 11, minWidth: 0 }} onClick={() => resizePlacement('h', (selectedP.h || 30) + 2)}>+</button>
+                <button className="btn-sm btn-outline" style={{ padding: '2px 6px', fontSize: 11, minWidth: 0, marginLeft: 4, background: '#1a5c2a', color: '#fff', border: 'none' }} onClick={autoFitPlacement} title="Auto-size to fill gap between neighbors">Auto-Fit</button>
+              </div>
             )}
             <button className="btn-sm btn-delete" onClick={deletePlacement}>Delete</button>
           </div>
@@ -478,7 +666,7 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
           onMouseUp={handleMouseUp}
           onMouseDown={(e) => {
             if (mode === 'draw') handleDrawStart(e);
-            else if (mode !== 'wire') setSelectedPlacement(null);
+            else if (mode !== 'wire' && mode !== 'circuit') setSelectedPlacement(null);
           }}
           onMouseLeave={handleMouseUp}
         >
@@ -565,6 +753,66 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
             <circle cx={wireStart.x + PAD} cy={wireStart.y + PAD} r="5" fill="none" stroke="#4af" strokeWidth="2" />
           )}
 
+          {/* Circuit wires */}
+          {(room.circuits || []).map(circuit =>
+            circuit.segments.map((seg, si) => {
+              const fromP = placements.find(p => p.id === seg.from);
+              const toP = placements.find(p => p.id === seg.to);
+              if (!fromP || !toP || fromP.cx === undefined || toP.cx === undefined) return null;
+              const route = calculateRoute(fromP, toP);
+              const d = route.map((pt, i) => `${i === 0 ? 'M' : 'L'}${pt.x + PAD},${pt.y + PAD}`).join(' ');
+              const mid = route[Math.floor(route.length / 2)];
+              return (
+                <g key={`cw-${circuit.id}-${si}`}>
+                  <path d={d} fill="none" stroke={circuit.color} strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />
+                  <text
+                    x={mid.x + PAD} y={mid.y + PAD - 6}
+                    textAnchor="middle" fill={circuit.color} fontSize="8" fontWeight="bold" fontFamily="Arial"
+                  >#{circuit.number}</text>
+                </g>
+              );
+            })
+          )}
+
+          {/* Homerun arrows to panel */}
+          {(room.circuits || []).filter(c => c.homerunTo).map(circuit => {
+            const devices = getDevicesOnCircuit(circuit);
+            const firstId = devices[0];
+            const panel = placements.find(p => p.id === circuit.homerunTo);
+            const device = placements.find(p => p.id === firstId);
+            if (!panel || !device || panel.cx === undefined || device.cx === undefined) return null;
+            const route = calculateRoute(device, panel);
+            const d = route.map((pt, i) => `${i === 0 ? 'M' : 'L'}${pt.x + PAD},${pt.y + PAD}`).join(' ');
+            return (
+              <g key={`hr-${circuit.id}`}>
+                <path d={d} fill="none" stroke={circuit.color} strokeWidth="3" strokeDasharray="8 4" opacity="0.7" />
+                <circle cx={panel.cx + PAD} cy={panel.cy + PAD} r="8" fill="none" stroke={circuit.color} strokeWidth="2" />
+                <text x={panel.cx + PAD} y={panel.cy + PAD + 3} textAnchor="middle" fill={circuit.color} fontSize="7" fontWeight="bold">P</text>
+              </g>
+            );
+          })}
+
+          {/* Snap highlight */}
+          {mode === 'circuit' && hoveredDevice && (() => {
+            const p = placements.find(pl => pl.id === hoveredDevice);
+            if (!p || p.cx === undefined) return null;
+            return (
+              <circle cx={p.cx + PAD} cy={p.cy + PAD} r={SNAP_RADIUS}
+                fill="rgba(74,170,255,0.1)" stroke="#4af" strokeWidth="1.5" strokeDasharray="4 2" />
+            );
+          })()}
+
+          {/* Preview line while chaining */}
+          {mode === 'circuit' && circuitChain && mousePos && (() => {
+            const lastP = placements.find(p => p.id === circuitChain.lastPlacementId);
+            if (!lastP || lastP.cx === undefined) return null;
+            const target = hoveredDevice ? placements.find(p => p.id === hoveredDevice) : { cx: mousePos.x, cy: mousePos.y };
+            if (!target) return null;
+            const route = calculateRoute(lastP, target);
+            const d = route.map((pt, i) => `${i === 0 ? 'M' : 'L'}${pt.x + PAD},${pt.y + PAD}`).join(' ');
+            return <path d={d} fill="none" stroke="#4af" strokeWidth="2" strokeDasharray="6 3" opacity="0.5" />;
+          })()}
+
           {/* Placed items */}
           {placements.filter(p => p.cx !== undefined).map(p => {
             const isSelected = p.id === selectedPlacement;
@@ -629,13 +877,138 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
             </div>
             <button className="btn-delete btn-sm" onClick={() => {
               const updated = placements.filter(pl => pl.id !== p.id);
-              onUpdate({ ...room, placements: updated });
+              const updatedCircuits = removeDeviceFromCircuits(room.circuits || [], p.id);
+              const syncedPlacements = syncPlacementCircuitFields(updated, updatedCircuits);
+              onUpdate({ ...room, placements: syncedPlacements, circuits: updatedCircuits });
               if (selectedPlacement === p.id) setSelectedPlacement(null);
               flash('Item removed');
             }}>&times;</button>
           </div>
         </div>
       ))}
+
+      {/* Circuit Summary */}
+      {(room.circuits || []).length > 0 && (
+        <>
+          <div className="section-header" style={{ marginTop: 16 }}>
+            <h3 className="section-title">Circuits ({(room.circuits || []).length})</h3>
+          </div>
+          {(room.circuits || []).map(circuit => {
+            const devices = getDevicesOnCircuit(circuit);
+            const isExpanded = expandedCircuitId === circuit.id;
+            return (
+              <div key={circuit.id} className="placement-card">
+                <div className="placement-header" onClick={() => setExpandedCircuitId(isExpanded ? null : circuit.id)}>
+                  <div className="placement-header-left">
+                    <span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: 3, background: circuit.color, marginRight: 6, flexShrink: 0 }} />
+                    <span className="placement-name">Circuit #{circuit.number}</span>
+                    <span className="meta" style={{ marginLeft: 8 }}>
+                      {devices.length} devices &middot; {circuit.amperage}A &middot; #{circuit.wireGauge} AWG
+                    </span>
+                  </div>
+                  <button className="btn-delete btn-sm" onClick={e => {
+                    e.stopPropagation();
+                    const updated = (room.circuits || []).filter(c => c.id !== circuit.id);
+                    const updatedPlacements = syncPlacementCircuitFields(placements, updated);
+                    onUpdate({ ...room, circuits: updated, placements: updatedPlacements });
+                    flash('Circuit deleted');
+                  }}>&times;</button>
+                </div>
+                {isExpanded && (
+                  <div className="placement-edit">
+                    <div className="edit-row">
+                      <label className="edit-label">Label</label>
+                      <input className="edit-input" placeholder="e.g. Kitchen Outlets"
+                        value={circuit.label}
+                        onChange={e => {
+                          const updated = (room.circuits || []).map(c => c.id === circuit.id ? { ...c, label: e.target.value } : c);
+                          onUpdate({ ...room, circuits: updated });
+                        }} />
+                    </div>
+                    <div className="edit-row">
+                      <label className="edit-label">Breaker</label>
+                      <select className="edit-input" value={circuit.amperage}
+                        onChange={e => {
+                          const updated = (room.circuits || []).map(c => c.id === circuit.id ? { ...c, amperage: Number(e.target.value) } : c);
+                          onUpdate({ ...room, circuits: updated });
+                        }}>
+                        <option value={15}>15A</option>
+                        <option value={20}>20A</option>
+                        <option value={30}>30A</option>
+                        <option value={40}>40A</option>
+                        <option value={50}>50A</option>
+                      </select>
+                    </div>
+                    <div className="edit-row">
+                      <label className="edit-label">Wire</label>
+                      <select className="edit-input" value={circuit.wireGauge}
+                        onChange={e => {
+                          const updated = (room.circuits || []).map(c => c.id === circuit.id ? { ...c, wireGauge: e.target.value } : c);
+                          onUpdate({ ...room, circuits: updated });
+                        }}>
+                        <option value="14">#14 AWG</option>
+                        <option value="12">#12 AWG</option>
+                        <option value="10">#10 AWG</option>
+                        <option value="8">#8 AWG</option>
+                        <option value="6">#6 AWG</option>
+                      </select>
+                    </div>
+                    <div className="edit-row">
+                      <label className="edit-label">Type</label>
+                      <select className="edit-input" value={circuit.type}
+                        onChange={e => {
+                          const updated = (room.circuits || []).map(c => c.id === circuit.id ? { ...c, type: e.target.value } : c);
+                          onUpdate({ ...room, circuits: updated });
+                        }}>
+                        <option value="general">General</option>
+                        <option value="dedicated">Dedicated</option>
+                        <option value="lighting">Lighting</option>
+                      </select>
+                    </div>
+                    <div className="edit-row" style={{ gap: 16 }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={circuit.gfci}
+                          onChange={e => {
+                            const updated = (room.circuits || []).map(c => c.id === circuit.id ? { ...c, gfci: e.target.checked } : c);
+                            onUpdate({ ...room, circuits: updated });
+                          }} />
+                        <span className="meta">GFCI</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={circuit.afci}
+                          onChange={e => {
+                            const updated = (room.circuits || []).map(c => c.id === circuit.id ? { ...c, afci: e.target.checked } : c);
+                            onUpdate({ ...room, circuits: updated });
+                          }} />
+                        <span className="meta">AFCI</span>
+                      </label>
+                    </div>
+                    <div className="edit-row">
+                      <label className="edit-label">Homerun</label>
+                      <select className="edit-input" value={circuit.homerunTo || ''}
+                        onChange={e => {
+                          const updated = (room.circuits || []).map(c => c.id === circuit.id ? { ...c, homerunTo: e.target.value || null } : c);
+                          onUpdate({ ...room, circuits: updated });
+                        }}>
+                        <option value="">None</option>
+                        {placements.filter(p => p.elecKey === 'panel').map(p => (
+                          <option key={p.id} value={p.id}>Panel ({p.location || 'unnamed'})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="meta" style={{ padding: '4px 0' }}>
+                      Devices: {devices.map(dId => {
+                        const dp = placements.find(p => p.id === dId);
+                        return dp?.name || 'Unknown';
+                      }).join(' \u2192 ')}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </>
+      )}
 
       </>}
       {/* ═══ END TOP VIEW CONTENT ═══ */}

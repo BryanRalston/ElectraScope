@@ -1,5 +1,6 @@
 import React from 'react';
 import { ELEC, FIXTURES } from '../constants';
+import { wireRunLengths } from '../loadCalc';
 import { SymIcon } from './ui';
 
 export default function ScopeView({ project, onPrint }) {
@@ -79,6 +80,45 @@ export default function ScopeView({ project, onPrint }) {
           </tbody>
         </table>
       </div>
+
+      {/* Wire Length Estimates */}
+      {(() => {
+        const wires = wireRunLengths(project);
+        if (wires.length === 0) return null;
+        return (
+          <div className="card" style={{ marginTop: 16 }}>
+            <h3 className="card-title">Wire Length Estimates</h3>
+            <table className="scope-table">
+              <thead>
+                <tr>
+                  <th>Wire Gauge</th>
+                  <th>Estimated Length</th>
+                  <th>Circuits</th>
+                </tr>
+              </thead>
+              <tbody>
+                {wires.map((w, i) => (
+                  <tr key={i}>
+                    <td style={{ fontWeight: 600 }}>#{w.gauge} AWG</td>
+                    <td>{w.lengthFt} ft</td>
+                    <td className="meta">
+                      {w.circuits.map(n => `#${n}`).join(', ')}
+                    </td>
+                  </tr>
+                ))}
+                <tr style={{ fontWeight: 600, borderTop: '2px solid var(--border)' }}>
+                  <td>Total</td>
+                  <td>{wires.reduce((sum, w) => sum + w.lengthFt, 0)} ft</td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+            <div className="meta" style={{ marginTop: 6, fontSize: 11 }}>
+              Includes 10% slack for routing. Homerun runs estimated at 6ft each. Verify actual runs on site.
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Per-room breakdown */}
       {rooms.map(r => {
