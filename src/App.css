@@ -1594,6 +1594,80 @@ body {
   padding: 2px 8px;
 }
 
+/* ─── Drawing Sheets (screen preview) ─────────────────────────────── */
+
+.print-sheet {
+  margin: 24px 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: white;
+}
+
+.print-sheet-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  border-bottom: 2px solid var(--amber);
+  padding-bottom: 4px;
+  margin-bottom: 12px;
+}
+
+.print-sheet-number {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--amber);
+  font-family: var(--font-mono);
+}
+
+.print-sheet-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.print-sheet-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.print-elevation-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.print-elevation h4 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+  color: var(--text-secondary);
+}
+
+.print-circuit-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 8px;
+  font-size: 11px;
+  border-top: 1px solid #eee;
+  padding-top: 6px;
+}
+
+.print-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.print-legend-swatch {
+  width: 14px;
+  height: 4px;
+  border-radius: 1px;
+}
+
 /* ─── Tutorial Spotlight ──────────────────────────────────────────── */
 
 .spotlight-backdrop {

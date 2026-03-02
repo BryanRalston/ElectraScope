@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { Fragment, useEffect } from 'react';
 import { ELEC, FIXTURES, CIRCUIT_COLORS } from '../constants';
 import { getDevicesOnCircuit } from '../circuitUtils';
 import { circuitVA, circuitLoadCheck, wireGaugeCheck, projectLoadSummary, wireRunLengths } from '../loadCalc';
+import { RenderFloorPlan, RenderWallElevation, CircuitLegend } from './PlanRenderer';
 
 export default function PrintView({ project, onClose }) {
   useEffect(() => {
@@ -69,6 +70,62 @@ export default function PrintView({ project, onClose }) {
           <div className="print-stat-label">Service</div>
         </div>
       </div>
+
+      {/* ─── Drawing Sheets ─── */}
+      {rooms.map((r, ri) => {
+        const hasPlacements = (r.placements || []).length > 0;
+        if (!hasPlacements) return null;
+        return (
+          <Fragment key={r.id}>
+            {/* Floor Plan */}
+            <div className="print-sheet">
+              <div className="print-sheet-header">
+                <span className="print-sheet-number">E-{ri * 3 + 1}</span>
+                <span className="print-sheet-title">ELECTRICAL FLOOR PLAN — {r.name.toUpperCase()}</span>
+                <span className="print-sheet-meta">{r.width}&apos; &times; {r.height}&apos; | {r.type} | Scale: 1&quot; = {(12 / 40).toFixed(2)}&apos;</span>
+              </div>
+              <RenderFloorPlan room={r} printMode />
+              {(r.circuits || []).length > 0 && <CircuitLegend circuits={r.circuits} />}
+            </div>
+
+            {/* Wall Elevations N/S */}
+            <div className="print-sheet">
+              <div className="print-sheet-header">
+                <span className="print-sheet-number">E-{ri * 3 + 2}</span>
+                <span className="print-sheet-title">WALL ELEVATIONS — {r.name.toUpperCase()} (NORTH / SOUTH)</span>
+              </div>
+              <div className="print-elevation-pair">
+                <div className="print-elevation">
+                  <h4>North Wall — {r.width}&apos;</h4>
+                  <RenderWallElevation room={r} wall="north" printMode />
+                </div>
+                <div className="print-elevation">
+                  <h4>South Wall — {r.width}&apos;</h4>
+                  <RenderWallElevation room={r} wall="south" printMode />
+                </div>
+              </div>
+            </div>
+
+            {/* Wall Elevations E/W */}
+            <div className="print-sheet">
+              <div className="print-sheet-header">
+                <span className="print-sheet-number">E-{ri * 3 + 3}</span>
+                <span className="print-sheet-title">WALL ELEVATIONS — {r.name.toUpperCase()} (EAST / WEST)</span>
+              </div>
+              <div className="print-elevation-pair">
+                <div className="print-elevation">
+                  <h4>East Wall — {r.height}&apos;</h4>
+                  <RenderWallElevation room={r} wall="east" printMode />
+                </div>
+                <div className="print-elevation">
+                  <h4>West Wall — {r.height}&apos;</h4>
+                  <RenderWallElevation room={r} wall="west" printMode />
+                </div>
+              </div>
+            </div>
+          </Fragment>
+        );
+      })}
 
       {/* ─── Panel Schedule ─── */}
       <h3 className="print-section-title">Panel Schedule</h3>

@@ -514,6 +514,7 @@ export default function WallElevationView({ room, wall, onUpdate, flash, selecte
                 <div className="placement-header-left">
                   {p.elecKey && <SymIcon sym={p.elecKey} size={20} />}
                   <span className="placement-name">{p.name}</span>
+                  {p.pos3d && <span style={{ fontSize: 9, color: '#22d3ee', fontWeight: 700, marginLeft: 6, background: 'rgba(34,211,238,0.15)', padding: '1px 4px', borderRadius: 3, letterSpacing: 0.5 }}>3D</span>}
                   {p.mountHeight !== undefined && (
                     <span className="meta" style={{ marginLeft: 8, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                       <button

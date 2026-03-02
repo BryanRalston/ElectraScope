@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getModel } from '../storage';
 
-export default function useModelLoader(room) {
+export default function useModelLoader(room, onClearModel) {
   const [url, setUrl] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -34,6 +34,8 @@ export default function useModelLoader(room) {
       .catch(err => {
         setError(err.message || 'Failed to load model');
         setLoading(false);
+        // Clear bad model metadata so user isn't stuck on revisit
+        if (onClearModel) onClearModel();
       });
 
     return () => {

@@ -83,6 +83,89 @@
 
   .print-room { page-break-inside: avoid; }
 
+  /* Drawing sheets */
+  .print-sheet {
+    page-break-before: always;
+    page-break-inside: avoid;
+    padding: 0;
+  }
+
+  .print-sheet-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    border-bottom: 2px solid #333;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+  }
+
+  .print-sheet-number {
+    font-size: 14px;
+    font-weight: 800;
+    font-family: monospace;
+  }
+
+  .print-sheet-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .print-sheet-meta {
+    font-size: 10px;
+    color: #666;
+    margin-left: auto;
+  }
+
+  .print-sheet svg {
+    width: 100%;
+    height: auto;
+    max-height: 6in;
+  }
+
+  .print-elevation-pair {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .print-elevation h4 {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin: 0 0 4px;
+    color: #333;
+  }
+
+  .print-elevation svg {
+    width: 100%;
+    height: auto;
+    max-height: 3.2in;
+  }
+
+  .print-circuit-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin-top: 8px;
+    font-size: 9px;
+    border-top: 1px solid #ccc;
+    padding-top: 6px;
+  }
+
+  .print-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .print-legend-swatch {
+    width: 14px;
+    height: 4px;
+    border-radius: 1px;
+  }
+
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

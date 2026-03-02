@@ -156,6 +156,7 @@ export default function RoomEditor({ room, onUpdate, onCanvas, flash }) {
               <div className="placement-header-left">
                 {p.elecKey && <SymIcon sym={p.elecKey} size={24} />}
                 <span className="placement-name">{p.name}</span>
+                {p.elecKey && ELEC[p.elecKey]?.amps && <span style={{ fontSize: 11, color: '#C47A15', fontWeight: 600, marginLeft: 6 }}>{ELEC[p.elecKey].amps}A</span>}
                 {p.qty > 1 && <span className="placement-detail">&times;{p.qty}</span>}
               </div>
               <div className="placement-header-right">

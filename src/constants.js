@@ -73,6 +73,7 @@ export const ELEC = {
     abbr: 'DX',
     cat: 'Outlets',
     color: '#C47A15',
+    amps: 15,
     path: `${SYM_OUTLET_CIRCLE} ${SYM_OUTLET_LINES}`
   },
   gfci: {
@@ -80,6 +81,7 @@ export const ELEC = {
     abbr: 'GFI',
     cat: 'Outlets',
     color: '#C47A15',
+    amps: 20,
     path: `${SYM_OUTLET_CIRCLE} M13,21 L17,21 M23,21 L27,21 M20,16 L20,26`
   },
   dedicated: {
@@ -88,6 +90,7 @@ export const ELEC = {
     abbr: 'DED',
     cat: 'Outlets',
     color: '#C47A15',
+    amps: 20,
     path: `${SYM_OUTLET_CIRCLE} M14,20 L26,20 M20,14 L20,26`
   },
   range: {
@@ -96,6 +99,7 @@ export const ELEC = {
     abbr: '240R',
     cat: 'Outlets',
     color: '#C47A15',
+    amps: 50,
     path: `${SYM_OUTLET_CIRCLE} M13,14 L13,26 M20,14 L20,26 M27,14 L27,26`
   },
   dryer: {
@@ -104,6 +108,7 @@ export const ELEC = {
     abbr: '240D',
     cat: 'Outlets',
     color: '#C47A15',
+    amps: 30,
     path: `${SYM_OUTLET_CIRCLE} M14,14 L14,26 M26,14 L26,26 M14,20 L26,20`
   },
   floor: {
@@ -111,6 +116,7 @@ export const ELEC = {
     abbr: 'FLR',
     cat: 'Outlets',
     color: '#C47A15',
+    amps: 15,
     path: `M4,4 L36,4 L36,36 L4,36 Z M12,14 L12,26 M28,14 L28,26`
   },
   usb: {
@@ -118,6 +124,7 @@ export const ELEC = {
     abbr: 'USB',
     cat: 'Outlets',
     color: '#C47A15',
+    amps: 15,
     path: `${SYM_OUTLET_CIRCLE} M16,13 L16,27 M20,10 L20,30 M24,13 L24,27`
   },
   // ── Switches ──

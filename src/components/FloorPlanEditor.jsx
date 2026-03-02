@@ -828,6 +828,7 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
                 >
                   <circle r="14" fill={isSelected ? 'rgba(34,211,238,0.2)' : 'rgba(0,0,0,0.6)'} stroke={isSelected ? '#22d3ee' : def.color} strokeWidth={isSelected ? 2 : 1.5} />
                   <text textAnchor="middle" dominantBaseline="middle" fill={def.color} fontSize={def.abbr.length > 2 ? '7' : '9'} fontWeight="bold" fontFamily="Arial">{def.abbr}</text>
+                  {def.amps && <text textAnchor="middle" y="22" fill={def.color} fontSize="7" fontWeight="bold" fontFamily="Arial" opacity="0.8">{def.amps}A</text>}
                 </g>
               );
             }
@@ -874,6 +875,8 @@ export default function FloorPlanEditor({ room, onUpdate, flash }) {
             <div className="placement-header-left">
               {p.elecKey && <SymIcon sym={p.elecKey} size={20} />}
               <span className="placement-name">{p.name}</span>
+              {p.elecKey && ELEC[p.elecKey]?.amps && <span style={{ fontSize: 11, color: '#C47A15', fontWeight: 600, marginLeft: 6 }}>{ELEC[p.elecKey].amps}A</span>}
+              {p.pos3d && <span style={{ fontSize: 9, color: '#22d3ee', fontWeight: 700, marginLeft: 6, background: 'rgba(34,211,238,0.15)', padding: '1px 4px', borderRadius: 3, letterSpacing: 0.5 }}>3D</span>}
             </div>
             <button className="btn-delete btn-sm" onClick={() => {
               const updated = placements.filter(pl => pl.id !== p.id);
