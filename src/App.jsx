@@ -8,6 +8,7 @@ import FloorPlanEditor from './components/FloorPlanEditor';
 import ScopeView from './components/ScopeView';
 import PrintView from './components/PrintView';
 import PanelSchedule from './components/PanelSchedule';
+import HousePlanView from './components/HousePlanView';
 import { DeleteConfirm, Toast } from './components/ui';
 import { STEPS } from './components/Tutorial';
 import TutorialSpotlight from './components/TutorialSpotlight';
@@ -53,6 +54,8 @@ export default function App() {
     if (view === 'canvas') {
       setView('room');
     } else if (view === 'room') {
+      setView('project');
+    } else if (view === 'houseplan') {
       setView('project');
     } else if (view === 'project' || view === 'scope' || view === 'print' || view === 'panel') {
       setView('projects');
@@ -115,6 +118,7 @@ export default function App() {
       case 'canvas': return room?.name + ' - Floor Plan';
       case 'scope': return 'Scope of Work';
       case 'panel': return 'Panel Schedule';
+      case 'houseplan': return 'House Plan';
       case 'print': return 'Print Preview';
       default: return null;
     }
@@ -186,6 +190,7 @@ export default function App() {
             onScope={() => setView('scope')}
             onPanel={() => setView('panel')}
             onPrint={() => setView('print')}
+            onHousePlan={() => setView('houseplan')}
             flash={flash}
           />
         )}
@@ -209,6 +214,14 @@ export default function App() {
 
         {view === 'panel' && proj && (
           <PanelSchedule project={proj} />
+        )}
+
+        {view === 'houseplan' && proj && (
+          <HousePlanView
+            project={proj}
+            onSave={updateProj}
+            onBack={() => setView('project')}
+          />
         )}
 
         {view === 'scope' && proj && (
