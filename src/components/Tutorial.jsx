@@ -3,7 +3,7 @@ import React from 'react';
 export const STEPS = [
   {
     title: "Welcome to ElectraScope",
-    body: "This tutorial walks you through a complete kitchen electrical plan — already built with outlets, circuits, and fixtures. We'll explore every tool so you know exactly how to build your own. Let's dive in!",
+    body: "This tutorial walks you through a complete whole-house electrical plan — 5 rooms, 103 devices, and 13 circuits already built. We'll explore every tool including professional floor plans, architectural views, and the new House Plan. Let's dive in!",
     view: 'project',
     target: null,
     position: 'center',
@@ -11,7 +11,7 @@ export const STEPS = [
   },
   {
     title: "Step 1: The Project View",
-    body: "You're looking at the project view. Notice the **Kitchen** room card showing electrical and fixture counts. From here you can access **Scope of Work**, **Panel Schedule**, and **Print**.",
+    body: "You're looking at the project view. Notice the **5 room cards** — Kitchen, Living Room, Master Bedroom, Bathroom, and Hallway — each showing electrical and fixture counts. This example project has **103 devices** across **13 circuits**. From here you can access **Scope of Work**, **Panel Schedule**, **House Plan**, and **Print**.",
     view: 'project',
     target: '.room-card',
     position: 'right',
@@ -20,7 +20,7 @@ export const STEPS = [
   },
   {
     title: "Step 2: Project Tools",
-    body: "These buttons let you **Share** your project, view the **Scope of Work**, check the **Panel Schedule**, or **Print** a permit-ready document. We'll explore these later.",
+    body: "These buttons let you **Share** your project, view the **Scope of Work**, check the **Panel Schedule**, open the **House Plan** (whole-house electrical layout), or **Print** a permit-ready document. We'll explore these later.",
     view: 'project',
     target: '.card .row',
     position: 'below',
@@ -52,7 +52,7 @@ export const STEPS = [
   },
   {
     title: "Step 6: Open the Floor Plan",
-    body: "Click **Floor Plan** to see the visual editor where everything is laid out — cabinets along the walls, outlets, lights on the ceiling, and colored circuit wires connecting devices.",
+    body: "Click **Floor Plan** to see the visual editor where everything is laid out — architectural fixture silhouettes, industry-standard electrical symbols, and circuit wires connecting devices.",
     view: 'room',
     target: '.btn-outline',
     position: 'below',
@@ -61,7 +61,7 @@ export const STEPS = [
   },
   {
     title: "Step 7: The Floor Plan",
-    body: "This is the top-down floor plan. You can see:\n• **Cabinets** (brown rectangles along the walls)\n• **Appliances** (fridge, range, dishwasher with icons)\n• **Electrical symbols** (colored circles)\n• **Circuit wires** (colored dashed lines)\n\nEach circuit has a unique color.",
+    body: "This is the professional top-down floor plan. You can see:\n• **Fixtures** rendered as architectural SVG silhouettes (cabinets, appliances, furniture)\n• **Thick walls** with door openings (gaps + swing arcs) and window openings (gaps + blue glass pane lines)\n• **Electrical symbols** as industry-standard NEC/IEEE SVG paths — blue for outlets, amber for lights, red for switches/safety\n• **Circuit wires** as teal dashed lines with directional arrows\n• **Smart labels** with collision detection — room names on white pills, circuit numbers on white pills, crowded rooms get smaller fonts",
     view: 'canvas',
     target: '.floor-plan-svg',
     position: 'right',
@@ -85,7 +85,7 @@ export const STEPS = [
   },
   {
     title: "Step 10: Circuit Wiring",
-    body: "The **Circuit** tool lets you chain electrical devices together. Click one outlet, then the next — a colored wire snaps between them. Each circuit gets a unique color and number. Press **Escape** to finish a chain.",
+    body: "The **Circuit** tool lets you chain electrical devices together. Click one outlet, then the next — a teal dashed wire with directional arrows snaps between them. Each circuit gets a number shown on a white pill label. Press **Escape** to finish a chain.",
     view: 'canvas',
     targetFn: () => {
       const btns = document.querySelectorAll('.tool-btn');
@@ -121,7 +121,7 @@ export const STEPS = [
   },
   {
     title: "Step 13: 3D View",
-    body: "The **3D** tab shows your kitchen in isometric perspective — all fixtures, cabinets, electrical items, and circuit wires. Use the **Rotate** slider to view from different angles. Great for client presentations.",
+    body: "The **3D** tab shows your room in isometric perspective — all fixtures, cabinets, electrical items, and circuit wires. Use the **Rotate** slider to view from different angles. Great for client presentations.",
     view: 'canvas',
     targetFn: () => {
       const tabs = document.querySelectorAll('.view-tab');
@@ -132,8 +132,16 @@ export const STEPS = [
     action: 'Click 3D to see the isometric view',
   },
   {
-    title: "Step 14: Panel Schedule & Reports",
-    body: "Go back to the project view. Try **Panel Schedule** for a professional electrical panel layout with load calculations per NEC 220. Try **Scope of Work** for a complete materials and wiring document. **Print** generates a permit-ready PDF package.",
+    title: "Step 14: House Plan",
+    body: "Go back to the project view and click **House Plan** to see all 5 rooms together in one unified plan. The House Plan has two modes:\n\n• **Arrange Rooms** — Drag room rectangles on a grid to position them relative to each other in your house layout\n• **Plan View** — Professional whole-house electrical plan with all rooms, shared walls, fixtures, symbols, circuits, and dual legends (Circuit Legend + Symbol Legend). Use the scale slider to adjust zoom. Hit **Print** for a permit-ready whole-house document.",
+    view: 'project',
+    target: '.card .row',
+    position: 'below',
+    action: 'Click House Plan to see the whole-house layout',
+  },
+  {
+    title: "Step 15: Panel Schedule & Reports",
+    body: "Back on the project view, try **Panel Schedule** for a professional electrical panel layout with load calculations per NEC 220. Try **Scope of Work** for a complete materials and wiring document. **Print** generates a permit-ready PDF package. Combined with the **House Plan**, you have a full set of professional deliverables.",
     view: 'project',
     target: '.card .row',
     position: 'below',
@@ -141,7 +149,7 @@ export const STEPS = [
   },
   {
     title: "Tutorial Complete!",
-    body: "You've explored every tool in ElectraScope! Your tutorial project is saved — keep experimenting.\n\n**NEC Quick Reference:**\n• GFCI required within 6ft of water sources\n• Kitchen needs min. 2 dedicated 20A small-appliance circuits\n• Dedicated circuits for fridge, dishwasher, range, microwave\n• AFCI protection on nearly all 120V circuits\n• Continuous loads must not exceed 80% of breaker rating\n\nHappy planning!",
+    body: "You've explored every tool in ElectraScope! From professional architectural floor plans with NEC/IEEE symbols, to the whole-house **House Plan** with drag-to-arrange rooms and unified plan view, to panel schedules and scope of work — your tutorial project is saved with all 5 rooms. Keep experimenting.\n\n**NEC Quick Reference:**\n• GFCI required within 6ft of water sources\n• Kitchen needs min. 2 dedicated 20A small-appliance circuits\n• Dedicated circuits for fridge, dishwasher, range, microwave\n• AFCI protection on nearly all 120V circuits\n• Continuous loads must not exceed 80% of breaker rating\n\nHappy planning!",
     view: null,
     target: null,
     position: 'center',
